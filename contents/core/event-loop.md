@@ -14,7 +14,7 @@ fallback). On Linux the same loop can instead use the opt-in **io_uring**
 backend, where I/O is driven by submission/completion ops rather than
 readiness events — see the [io_uring guide](../io_uring.md).
 
-Runnable example: [`examples/timers_scheduler.nim`](../../examples/timers_scheduler.nim).
+Runnable example: [`examples/timers_scheduler.nim`](https://github.com/openpeeps/powpow/blob/main/examples/timers_scheduler.nim).
 
 ## Creating a loop
 
@@ -169,7 +169,7 @@ The platform layer is selected at compile time by `platform.nim`:
 
 Every backend exposes the same surface: `Platform.init`, `add`, `remove`,
 `modify`, `wake`, `poll`, `close`, plus the `Platform`/`PlatformEvent` types.
-You almost never touch these directly — see the [platform API page](../api/platform.md).
+You almost never touch these directly — see the [platform API page](https://openpeeps.github.io/powpow/theindex.html).
 
 The **io_uring** backend shares this same `Loop` type and the timer
 wheel/deferred/idle machinery; only the I/O driving differs (submission-based
@@ -177,4 +177,4 @@ ops instead of readiness events). See the [io_uring guide](../io_uring.md).
 
 ## API reference
 
-Full signatures: [loop API](../api/loop.md). Underlying types: [types API](../api/types.md).
+Full signatures: [loop API](https://openpeeps.github.io/powpow/theindex.html). Underlying types: [types API](https://openpeeps.github.io/powpow/theindex.html).

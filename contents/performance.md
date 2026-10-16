@@ -271,6 +271,6 @@ connections allocate on demand (server-side pool starvation):
 
 ## API reference
 
-- [SIMD scanning API reference](https://openpeeps.github.io/powpow)
+- [SIMD scanning API reference](https://openpeeps.github.io/powpow/theindex.html)
 - [event loop](core/event-loop.md), [static files](http/static-files.md),
   [concurrency](concurrency.md)

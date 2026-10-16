@@ -6,7 +6,8 @@ keywords: ["powpow", "testing", "tests", "smuggler", "fuzzing"]
 
 # Testing
 
-powpow's test suite lives in [`tests/`](../tests/). The security hardening is
+powpow's test suite lives in
+[`tests/`](https://github.com/openpeeps/powpow/tree/main/tests). The security hardening is
 regression-tested by `test_security.nim`, malformed requests by
 `test_bad_requests.nim`, and the parser is fuzzed by the smuggler integration
 suite.
@@ -48,6 +49,16 @@ nim c -r tests/test_bad_requests.nim
 | `test_firefox_regression.nim` | Regression: a real Firefox POST (Cookie header) parses correctly |
 | `test_findcrlf.nim` | `findDoubleCRLF` on the exact Firefox POST bytes |
 | `test_sse2*.nim` | SIMD CRLF detection: positions, negative cases, chunk-boundary and 225-byte curl buffer cases |
+| `test_dtls.nim` | DTLS 1.2: handshake, cookie exchange, MTU-split echo |
+| `test_httpclient.nim` / `test_httpclient_security.nim` | HTTP client: sync/async, pooling, UDS, malformed-response hardening |
+| `test_http2*.nim` / `test_hpack.nim` | HTTP/2 framing, HPACK, client, TLS and security bounds |
+| `test_ws_client.nim` / `test_ws_pool.nim` / `test_ws_threads.nim` | WebSocket client, pool limits, threaded servers |
+| `test_threadpool.nim` | Thread pool: submit, drain close, discard shutdown |
+| `test_io_uring.nim` | io_uring backend (Linux; skipped elsewhere) |
+| `test_ktls.nim` | kTLS state queries (`POWPOW_KTLS_STRICT=1` for engaged-offload mode) |
+| `test_stream.nim` | `IoStream`: socketpair echo, backpressure, half-close |
+| `test_ratelimit_multi.nim` | Multi-window rate limiting |
+| `test_alpn.nim` | ALPN negotiation (`h2` vs `http/1.1`) |
 | `smuggler_integration.nim` | powpow × smuggler: in-process parser fuzzing (A), two-server differential vs an RFC-strict reference (B), optional live-server CLI fuzzing (C) |
 
 ## Fuzz configs

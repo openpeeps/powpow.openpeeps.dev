@@ -10,7 +10,7 @@ keywords: ["powpow", "udp", "datagram", "socket"]
 (server-style, receives from anyone) and **connected** (client-style, scoped to
 one peer).
 
-Runnable example: [`examples/udp_echo.nim`](../../examples/udp_echo.nim).
+Runnable example: [`examples/udp_echo.nim`](https://github.com/openpeeps/powpow/blob/main/examples/udp_echo.nim).
 
 ## Bound UDP socket (server)
 
@@ -54,5 +54,5 @@ sock.close()
 
 ## API reference
 
-Full signatures: [UDP API](../api/udp.md). Related: [sockets](sockets.md),
+Full signatures: [UDP API](https://openpeeps.github.io/powpow/theindex.html). Related: [sockets](sockets.md),
 [TCP](tcp.md).

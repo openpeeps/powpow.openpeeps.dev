@@ -112,5 +112,5 @@ For fully parsed requests, the `BodyStream` API in
 
 ## API reference
 
-Full signatures: [HTTP parser API](../api/http.md). Related:
+Full signatures: [HTTP parser API](https://openpeeps.github.io/powpow/theindex.html). Related:
 [requests](requests.md), [server](server.md).

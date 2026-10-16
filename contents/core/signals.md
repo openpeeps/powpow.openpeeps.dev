@@ -12,8 +12,8 @@ powpow provides two related things in `signal.nim`:
 2. **OS signal delivery** — real OS signals (SIGINT, SIGTERM, SIGHUP, …)
    delivered through the event loop, without global signal handlers.
 
-Runnable examples: [`examples/signal_bus.nim`](../../examples/signal_bus.nim),
-[`examples/os_signals.nim`](../../examples/os_signals.nim).
+Runnable examples: [`examples/signal_bus.nim`](https://github.com/openpeeps/powpow/blob/main/examples/signal_bus.nim),
+[`examples/os_signals.nim`](https://github.com/openpeeps/powpow/blob/main/examples/os_signals.nim).
 
 ## SignalRelay: the in-process event bus
 
@@ -83,7 +83,7 @@ loop.run()
 > [!NOTE]
 > SIGPIPE is ignored globally by powpow on POSIX (the loop never crashes on a
 > closed-socket write). SIGCHLD is delivered as an event; full child-process
-> `waitpid` monitoring is on the [roadmap](../../plans/roadmap.md).
+> `waitpid` monitoring is on the [roadmap](https://github.com/openpeeps/powpow/blob/main/plans/roadmap.md).
 
 ## Graceful shutdown pattern
 
@@ -95,8 +95,8 @@ relay.listen(SignalInt, proc() =
   loop.close())
 ```
 
-See [`examples/os_signals.nim`](../../examples/os_signals.nim) for this exact flow.
+See [`examples/os_signals.nim`](https://github.com/openpeeps/powpow/blob/main/examples/os_signals.nim) for this exact flow.
 
 ## API reference
 
-Full signatures: [signal API](../api/signal.md).
+Full signatures: [signal API](https://openpeeps.github.io/powpow/theindex.html).

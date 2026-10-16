@@ -41,6 +41,10 @@ multi-threaded servers.
 
 @net/tls.md
 
+@net/ktls.md
+
+@net/dtls.md
+
 ### HTTP
 
 @http/parser.md
@@ -48,6 +52,12 @@ multi-threaded servers.
 @http/requests.md
 
 @http/server.md
+
+@http/client.md
+
+@http/http2.md
+
+@http/proxy.md
 
 @http/static-files.md
 
@@ -65,7 +75,8 @@ multi-threaded servers.
 
 @examples.md
 
-@api/README.md
+Full per-module signatures live in the
+[generated API reference](https://openpeeps.github.io/powpow/theindex.html).
 
 @performance.md
 
@@ -73,7 +84,7 @@ multi-threaded servers.
 
 @testing.md
 
-## Also in this repository
+## Also in the library repository
 
-- [`../plans/`](../plans/) — development plans and roadmap (not user docs)
-- [`../audit/`](../audit/) — the security audit report and its reproducers
+- [`plans/`](https://github.com/openpeeps/powpow/tree/main/plans) — development plans and roadmap (not user docs)
+- [`audit/`](https://github.com/openpeeps/powpow/tree/main/audit) — the security audit report and its reproducers

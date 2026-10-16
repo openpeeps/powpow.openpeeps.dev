@@ -9,7 +9,7 @@ keywords: ["powpow", "rate limit", "ratelimit", "throttling", "http"]
 `proto/ratelimit.nim` provides a sliding-window rate limiter keyed by client IP,
 integrated with the event loop and safe to share across threads.
 
-Runnable example: [`examples/ratelimit_server.nim`](../../examples/ratelimit_server.nim).
+Runnable example: [`examples/ratelimit_server.nim`](https://github.com/openpeeps/powpow/blob/main/examples/ratelimit_server.nim).
 
 ## Creating a limiter
 
@@ -68,5 +68,5 @@ across the worker threads of a multi-threaded server. Covered by
 
 ## API reference
 
-Full signatures: [rate limiter API](../api/ratelimit.md). Related:
+Full signatures: [rate limiter API](https://openpeeps.github.io/powpow/theindex.html). Related:
 [server](server.md), [security](../security.md).

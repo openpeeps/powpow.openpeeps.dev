@@ -10,9 +10,9 @@ keywords: ["powpow", "tcp", "networking", "server", "client"]
 loop: connection pooling, write buffering with corking, scatter-gather writes
 (`sendv`), zero-copy file send, and graceful close-after-drain.
 
-Runnable examples: [`examples/tcp_chat.nim`](../../examples/tcp_chat.nim),
-[`examples/tcp_client.nim`](../../examples/tcp_client.nim),
-[`examples/tcp_proxy.nim`](../../examples/tcp_proxy.nim).
+Runnable examples: [`examples/tcp_chat.nim`](https://github.com/openpeeps/powpow/blob/main/examples/tcp_chat.nim),
+[`examples/tcp_client.nim`](https://github.com/openpeeps/powpow/blob/main/examples/tcp_client.nim),
+[`examples/tcp_proxy.nim`](https://github.com/openpeeps/powpow/blob/main/examples/tcp_proxy.nim).
 
 ## TCP server
 
@@ -119,5 +119,5 @@ loop.releaseBuf(buf)
 
 ## API reference
 
-Full signatures: [TCP API](../api/tcp.md). Related: [sockets](sockets.md),
+Full signatures: [TCP API](https://openpeeps.github.io/powpow/theindex.html). Related: [sockets](sockets.md),
 [UDP](udp.md), [TLS](tls.md).

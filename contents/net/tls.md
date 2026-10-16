@@ -11,7 +11,7 @@ keywords: ["powpow", "tls", "ssl", "https", "openssl"]
 (STARTTLS-style: a plaintext connection that negotiates TLS mid-stream).
 TLS is not available on Windows (`SslError` is raised).
 
-Runnable example: [`examples/tls_server.nim`](../../examples/tls_server.nim).
+Runnable example: [`examples/tls_server.nim`](https://github.com/openpeeps/powpow/blob/main/examples/tls_server.nim).
 
 ## Contexts
 
@@ -54,7 +54,7 @@ server.sslCtx = newServerTlsContext("cert.pem", "key.pem")
 server.start(handler, Port(9443))
 ```
 
-See [`examples/tls_server.nim`](../../examples/tls_server.nim) (embedded
+See [`examples/tls_server.nim`](https://github.com/openpeeps/powpow/blob/main/examples/tls_server.nim) (embedded
 self-signed cert) — `curl -k https://localhost:9443/hello`.
 
 ## STARTTLS-style upgrade
@@ -83,9 +83,9 @@ conn.isTlsActive()
 `net/tlsapi.nim` is a minimal direct-link OpenSSL binding (`-lssl -lcrypto`)
 used by `tls.nim`: `SSL_CTX_new`, `SSL_new`, `SSL_do_handshake`, `SSL_read`,
 `SSL_write`, `SSL_shutdown`, `SSL_get_error`, `SSL_set1_host`, `opensslError`,
-and the associated constants. See [tlsapi API](../api/tlsapi.md).
+and the associated constants. See [tlsapi API](https://openpeeps.github.io/powpow/theindex.html).
 
 ## API reference
 
-Full signatures: [TLS API](../api/tls.md). Related: [TCP](tcp.md),
+Full signatures: [TLS API](https://openpeeps.github.io/powpow/theindex.html). Related: [TCP](tcp.md),
 [sockets](sockets.md).

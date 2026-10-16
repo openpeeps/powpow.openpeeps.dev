@@ -10,7 +10,7 @@ keywords: ["powpow", "stream", "iostream", "pipe", "socketpair", "ipc", "raw fd"
 file descriptor from the event loop — the same machinery `Connection` uses, but
 for any fd, not just sockets.
 
-Runnable example: [`examples/stream_pipe.nim`](../../examples/stream_pipe.nim).
+Runnable example: [`examples/stream_pipe.nim`](https://github.com/openpeeps/powpow/blob/main/examples/stream_pipe.nim).
 
 ## What it enables
 
@@ -106,4 +106,4 @@ self-pipe).
 
 ## API reference
 
-Full signatures: [stream API](../api/stream.md).
+Full signatures: [stream API](https://openpeeps.github.io/powpow/theindex.html).

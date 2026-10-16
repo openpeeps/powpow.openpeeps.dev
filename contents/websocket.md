@@ -17,10 +17,10 @@ server side in two modes plus a first-class client:
    (high level, auto-reconnect, own loop) or `connectWs()` (low level, your
    loop).
 
-Runnable examples: [`examples/wsserver.nim`](../examples/wsserver.nim),
-[`examples/wsupgrade.nim`](../examples/wsupgrade.nim),
-[`examples/ws_chat.nim`](../examples/ws_chat.nim),
-[`examples/wsclient.nim`](../examples/wsclient.nim).
+Runnable examples: [`examples/wsserver.nim`](https://github.com/openpeeps/powpow/blob/main/examples/wsserver.nim),
+[`examples/wsupgrade.nim`](https://github.com/openpeeps/powpow/blob/main/examples/wsupgrade.nim),
+[`examples/ws_chat.nim`](https://github.com/openpeeps/powpow/blob/main/examples/ws_chat.nim),
+[`examples/wsclient.nim`](https://github.com/openpeeps/powpow/blob/main/examples/wsclient.nim).
 
 ## Frame types
 
@@ -175,5 +175,5 @@ Per-message deflate is supported. Frame caps still apply in
 ## Related
 
 [HTTP server guide](http/server.md), the runnable
-[wsclient example](examples/wsclient.md), and the generated
-[API reference](https://openpeeps.github.io/powpow) for full signatures.
+[wsclient example](https://github.com/openpeeps/powpow/blob/main/examples/wsclient.nim), and the generated
+[API reference](https://openpeeps.github.io/powpow/theindex.html) for full signatures.

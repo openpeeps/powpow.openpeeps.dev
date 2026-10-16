@@ -12,7 +12,7 @@ incoming connections across N worker threads, each running its own event loop
 and listen socket. There is no cross-thread acceptor bottleneck and zero
 shared-lock contention on the hot path.
 
-Runnable example: [`examples/httpserver_threads.nim`](../examples/httpserver_threads.nim).
+Runnable example: [`examples/httpserver_threads.nim`](https://github.com/openpeeps/powpow/blob/main/examples/httpserver_threads.nim).
 
 ## Multi-threaded HTTP server
 
@@ -161,5 +161,5 @@ services, not scheduling throughput:
 
 ## API reference
 
-Full signatures: [generated API reference](https://openpeeps.github.io/powpow). Related:
+Full signatures: [generated API reference](https://openpeeps.github.io/powpow/theindex.html). Related:
 [server](http/server.md), [event loop](core/event-loop.md).

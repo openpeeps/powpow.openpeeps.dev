@@ -11,8 +11,8 @@ and the [parser](parser.md). It is deliberately **router-less**: you provide one
 callback and route however you like (plain `if`/`case`, or a framework such as
 Supranim on top).
 
-Runnable examples: [`examples/httpserver.nim`](../../examples/httpserver.nim),
-[`examples/static_server.nim`](../../examples/static_server.nim).
+Runnable examples: [`examples/httpserver.nim`](https://github.com/openpeeps/powpow/blob/main/examples/httpserver.nim),
+[`examples/static_server.nim`](https://github.com/openpeeps/powpow/blob/main/examples/static_server.nim).
 
 ## Creating a server
 
@@ -56,6 +56,24 @@ server.close()
 
 `getLoop(server)` returns the server's loop; `ensureTcpServer` lazily creates
 the underlying `TcpServer`; `addConnection(fd)` injects an accepted fd.
+
+## Multi-port servers
+
+One server (one loop, one handler) can bind several ports. All ports share
+the handler, address and TLS context — only the port differs:
+
+```nim
+server.start(handler, Port(9000), Port(9001))   # varargs form
+# or additive:
+server.listen("0.0.0.0", 9000)
+server.listen("0.0.0.0", 9001)
+server.getLoop().run()
+```
+
+Runnable version:
+[`examples/httpserver_multiport.nim`](https://github.com/openpeeps/powpow/blob/main/examples/httpserver_multiport.nim)
+— `curl http://localhost:9000/` and `curl http://localhost:9001/` hit the
+same handler.
 
 ## Response builder
 
@@ -123,6 +141,7 @@ production values):
 
 ## API reference
 
-Full signatures: [HTTP server API](../api/httpserver.md). Related:
+Full signatures: [generated API reference](https://openpeeps.github.io/powpow/theindex.html). Related:
 [requests](requests.md), [static files](static-files.md),
-[multipart](multipart.md), [rate limiting](rate-limiting.md).
+[multipart](multipart.md), [rate limiting](rate-limiting.md),
+[client](client.md), [proxy](proxy.md), [HTTP/2](http2.md).

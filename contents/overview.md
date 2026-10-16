@@ -224,5 +224,5 @@ The aggregate module `src/powpow.nim` re-exports:
 ## Where to go next
 
 - [Getting started](getting-started.md)
-- [Examples index](examples.md) — 19 runnable programs covering every feature
-- [API reference](https://openpeeps.github.io/powpow)
+- [Examples index](examples.md) — 30 runnable programs covering every feature
+- [API reference](https://openpeeps.github.io/powpow/theindex.html)

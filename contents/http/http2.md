@@ -1,3 +1,9 @@
+---
+title: HTTP/2
+description: "Experimental HTTP/2 in powpow: h2c and h2 over TLS servers, multiplexed client with pooling, and multi-threaded H2."
+keywords: ["powpow", "http2", "h2", "h2c", "hpack", "multiplexing"]
+---
+
 # HTTP/2
 
 Experimental HTTP/2 support ([RFC 7540](https://httpwg.org/specs/rfc7540.html))
@@ -41,7 +47,7 @@ let srv = newH2Server(loop, handler, sslCtx = ctx)
 Responses use `res.status(code).header(name, value).send(body)`; `res.reset()`
 aborts a stream. Oversize header blocks get an automatic `431`.
 
-Runnable version: [`examples/http2server.nim`](../../../examples/http2server.nim)
+Runnable version: [`examples/http2server.nim`](https://github.com/openpeeps/powpow/blob/main/examples/http2server.nim)
 — `h2` over TLS by default with an embedded self-signed cert (open
 `https://localhost:9040/` in a browser and accept the warning),
 `--h2c` for cleartext, `--tls cert.pem key.pem` for your own cert.
@@ -63,6 +69,35 @@ connectH2(loop, "127.0.0.1", 9000) do (c: H2ClientConn, err: string):
 `H2ClientPool` shares connections per origin (`host, port, tls`) with
 least-loaded routing and bounded fan-out (`maxPerOrigin`); overflow waits
 instead of opening more connections.
+
+```nim
+let pool = newH2ClientPool(loop, maxPerOrigin = 2)
+pool.request("127.0.0.1", 9000, false, "GET", "/", [], "",
+  proc(resp: H2ClientResponse, err: string) =
+    echo resp.status, " body=", resp.body.len)
+```
+
+TLS client: `connectH2Tls(loop, host, port, tlsCtx, cb)` negotiates `h2`
+via ALPN. Close with `close(conn)` / `close(pool)`.
+
+## Multi-threaded H2
+
+Like HTTP/1.1, H2 scales with one loop per core over `SO_REUSEPORT`:
+
+```bash
+nim c -r --threads:on examples/http2server_threads.nim
+```
+
+Runnable versions:
+[`examples/http2server.nim`](https://github.com/openpeeps/powpow/blob/main/examples/http2server.nim),
+[`examples/http2server_threads.nim`](https://github.com/openpeeps/powpow/blob/main/examples/http2server_threads.nim).
+
+```bash
+# cleartext
+curl --http2-prior-knowledge http://localhost:9040/hello
+# over TLS (self-signed)
+curl -k --http2 https://localhost:9040/hello
+```
 
 ## Limits and knobs
 

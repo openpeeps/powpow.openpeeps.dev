@@ -11,7 +11,7 @@ runs entirely on the powpow event loop — no blocking `getaddrinfo`, no worker
 threads, no `--threads:on` requirement. `tcp.connect` uses it automatically, so
 outbound connects never stall the loop on DNS.
 
-Status: implemented (see [`plans/async_dns.md`](../../plans/async_dns.md) for the
+Status: implemented (see [`plans/async_dns.md`](https://github.com/openpeeps/powpow/blob/main/plans/async_dns.md) for the
 design and the follow-up work).
 
 ## How it works
@@ -69,8 +69,8 @@ connect(loop, "api.example.com", 443,
 - IPv6 nameservers with scope IDs
 - UDP `sendTo` sync cache fast-path
 
-See [`plans/roadmap.md`](../../plans/roadmap.md).
+See [`plans/roadmap.md`](https://github.com/openpeeps/powpow/blob/main/plans/roadmap.md).
 
 ## API reference
 
-Full signatures: [DNS API](../api/dns.md).
+Full signatures: [DNS API](https://openpeeps.github.io/powpow/theindex.html).

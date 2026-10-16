@@ -89,5 +89,5 @@ by the server.
 
 ## API reference
 
-Full signatures: [HTTP parser API](../api/http.md). Related: [server](server.md),
+Full signatures: [HTTP parser API](https://openpeeps.github.io/powpow/theindex.html). Related: [server](server.md),
 [multipart](multipart.md).

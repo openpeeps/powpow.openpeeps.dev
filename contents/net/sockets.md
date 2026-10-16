@@ -87,5 +87,5 @@ is 107.
 
 ## API reference
 
-Full signatures: [common API](../api/common.md). Also see [TCP](tcp.md) and
+Full signatures: [common API](https://openpeeps.github.io/powpow/theindex.html). Also see [TCP](tcp.md) and
 [UDP](udp.md).

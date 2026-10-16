@@ -60,7 +60,8 @@ nimble install powpow
 
 ## Reference
 
-@api/README.md
+Full per-module signatures live in the
+[generated API reference](https://openpeeps.github.io/powpow/theindex.html).
 
 @security.md
 

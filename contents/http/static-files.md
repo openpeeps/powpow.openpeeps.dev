@@ -10,8 +10,8 @@ powpow serves files with three APIs, each a different trade-off. They share the
 same zero-copy core (`sendfile`) and the same safety checks (path-traversal and
 symlink-escape protection).
 
-Runnable example: [`examples/static_server.nim`](../../examples/static_server.nim)
-and [`examples/stream_server.nim`](../../examples/stream_server.nim).
+Runnable example: [`examples/static_server.nim`](https://github.com/openpeeps/powpow/blob/main/examples/static_server.nim)
+and [`examples/stream_server.nim`](https://github.com/openpeeps/powpow/blob/main/examples/stream_server.nim).
 
 ## API matrix
 
@@ -77,5 +77,5 @@ override the defaults.
 
 ## API reference
 
-Full signatures: [HTTP server API](../api/httpserver.md). Related:
+Full signatures: [HTTP server API](https://openpeeps.github.io/powpow/theindex.html). Related:
 [server](server.md).

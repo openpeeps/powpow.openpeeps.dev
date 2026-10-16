@@ -157,11 +157,11 @@ server.start(server.handler, Port(9444))
 
 Runnable versions:
 
-- [`examples/httpserver_ktls.nim`](../../examples/httpserver_ktls.nim) — HTTPS
+- [`examples/httpserver_ktls.nim`](https://github.com/openpeeps/powpow/blob/main/examples/httpserver_ktls.nim) — HTTPS
   with a `/ktls` endpoint reporting per-connection offload state.
-- [`examples/stream_server_ktls.nim`](../../examples/stream_server_ktls.nim) —
+- [`examples/stream_server_ktls.nim`](https://github.com/openpeeps/powpow/blob/main/examples/stream_server_ktls.nim) —
   the streaming and download routes of
-  [`examples/stream_server.nim`](../../examples/stream_server.nim) over TLS.
+  [`examples/stream_server.nim`](https://github.com/openpeeps/powpow/blob/main/examples/stream_server.nim) over TLS.
 
 Both ask for offload only when `ktlsSupported()` and never branch on the
 answer, so they are ordinary userspace-TLS servers everywhere kTLS does not
@@ -237,7 +237,7 @@ bytes to a kernel that is not encrypting them.
 `KtlsMode`, `configureKtls`, `enableKtls`, `disableKtls`, `ktlsSupported`,
 `ktlsTxActive`, `ktlsRxActive`, `ktlsActive`, `ktlsTxInstalled`,
 `ktlsRxInstalled` — see [TLS](tls.md) for the surrounding API, and
-[TLS API](../api/tls.md) for full signatures.
+[TLS API](https://openpeeps.github.io/powpow/theindex.html) for full signatures.
 
 Related: [TLS](tls.md) · [static files](../http/static-files.md) ·
 [io_uring](../io_uring.md) · [performance](../performance.md)

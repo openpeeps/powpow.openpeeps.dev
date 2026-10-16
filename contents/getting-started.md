@@ -13,9 +13,10 @@ keywords: ["powpow", "getting started", "install", "first server", "hello world"
 
 Dependencies are resolved automatically by nimble:
 
+- `voodoo >= 0.2.0`
 - `nimsimd >= 1.3.2`
 - `mimedb >= 0.1.1`
-- `openparser >= 0.1.8`
+- `openparser >= 0.3.8`
 - `multipart >= 0.1.4`
 - `checksums >= 0.2.2`
 
@@ -79,7 +80,7 @@ websocat ws://localhost:9001
 
 ## Running the examples
 
-Every example in [`examples/`](../examples/) is runnable:
+Every example in [`examples/`](https://github.com/openpeeps/powpow/tree/main/examples) is runnable:
 
 ```bash
 nim c -r examples/httpserver.nim          # HTTP server on :9000
@@ -127,4 +128,6 @@ idioms used by the examples.
 - [Overview](overview.md) — architecture and the full feature matrix
 - [Event loop](core/event-loop.md) — the foundation everything sits on
 - [HTTP server](http/server.md) — routing, responses, config
-- [Examples index](examples.md) — 19 runnable programs
+- [HTTP client](http/client.md) — blocking and async requests
+- [HTTP/2](http/http2.md) — multiplexed `h2c`/`h2`
+- [Examples index](examples.md) — 30 runnable programs

@@ -9,7 +9,7 @@ keywords: ["powpow", "fswatch", "file watching", "inotify", "kqueue"]
 `fswatch.nim` exposes a `FileWatcher` that monitors a file or directory for
 changes, integrated with the event loop — no polling, no extra threads.
 
-Runnable example: [`examples/fswatch.nim`](../../examples/fswatch.nim).
+Runnable example: [`examples/fswatch.nim`](https://github.com/openpeeps/powpow/blob/main/examples/fswatch.nim).
 
 ## Creating a watcher
 
@@ -51,4 +51,4 @@ cleaned up via `addCleanup` when the loop closes.
 
 ## API reference
 
-Full signatures: [fswatch API](../api/fswatch.md).
+Full signatures: [fswatch API](https://openpeeps.github.io/powpow/theindex.html).

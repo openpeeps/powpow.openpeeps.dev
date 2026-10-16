@@ -9,7 +9,7 @@ keywords: ["powpow", "multipart", "upload", "file", "streaming"]
 powpow handles file uploads with bounded memory: multipart bodies are parsed on
 the fly (`getMultipart`) or streamed straight to disk (`streamToFile`).
 
-Runnable example: [`examples/upload_server.nim`](../../examples/upload_server.nim).
+Runnable example: [`examples/upload_server.nim`](https://github.com/openpeeps/powpow/blob/main/examples/upload_server.nim).
 
 ## Raw body → disk
 
@@ -55,5 +55,5 @@ Violations reply `413` instead of raising — see [security](../security.md).
 
 ## API reference
 
-Full signatures: [HTTP parser API](../api/http.md). Related:
+Full signatures: [HTTP parser API](https://openpeeps.github.io/powpow/theindex.html). Related:
 [requests](requests.md), [security](../security.md).
