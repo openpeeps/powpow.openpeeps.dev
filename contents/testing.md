@@ -38,7 +38,7 @@ nim c -r tests/test_bad_requests.nim
 | `test_http.nim` | HTTP parser: basic GET, POST body, query string, headers, chunked encoding, keep-alive |
 | `test_net.nim` | Transport: TCP server echo, TCP client connect, UDP bind/send/recv |
 | `test_loop.nim` | Event loop: timers, intervals, deferred calls, fd eventing, loop stop |
-| `test_dns.nim` | Async DNS: synthetic UDP responder, IP-literal fast path, `/etc/hosts`, A/AAAA fallback, NXDOMAIN, timeout, TTL cache, `connect()` integration |
+| `test_dns.nim` | Async DNS: synthetic UDP responder, IP-literal fast path, `/etc/hosts`, A/AAAA fallback, NXDOMAIN, timeout, TTL cache, `connect()` integration, TCP fallback for truncation, search/`ndots`/IPv6 nameservers, MX/TXT |
 | `test_tls.nim` | TLS: implicit-TLS echo, STARTTLS-style in-place upgrade |
 | `test_signal.nim` | Signal/Relay: repeating listeners, multiple emits |
 | `test_security.nim` | Security: body size limits, overflow protection, DoS resistance, connection limits, WS frame limits, path traversal |
@@ -71,5 +71,5 @@ nim c -r tests/test_bad_requests.nim
 
 ## Related docs
 
-- [Security](security.md) — what the hardening tests enforce
-- [Examples index](examples.md) — runnable programs for manual verification
+- [Security](security) — what the hardening tests enforce
+- [Examples index](examples) — runnable programs for manual verification

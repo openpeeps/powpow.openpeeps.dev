@@ -6,7 +6,8 @@ keywords: ["powpow", "signals", "sigint", "sigterm", "pubsub", "signalrelay"]
 
 # Signals
 
-powpow provides two related things in `signal.nim`:
+powpow provides two related things in `signal.nim` (opt-in:
+`import powpow/signal` — it is no longer re-exported by `import powpow`):
 
 1. **`SignalRelay`** — an in-process pub/sub event bus for named events.
 2. **OS signal delivery** — real OS signals (SIGINT, SIGTERM, SIGHUP, …)
@@ -22,6 +23,9 @@ the exported constructors). Events are addressed by an integer signal id; you
 can also use `OsSignal` values as ids.
 
 ```nim
+import powpow
+import powpow/signal
+
 let relay = newSignalRelay(loop, maxSignals = 64)
 
 # permanent subscriber
@@ -39,6 +43,11 @@ unlisten(handle)   # or unlisten manually
 `listen`/`listenOnce` return a `ListenerHandle`; call `unlisten(handle)` to
 remove a subscriber early.
 
+`newSignalRelay(maxSignals)` and `newOsSignalRelay()` without a loop create
+and own a private loop: `relay.run()` blocks driving it, `relay.close()` frees
+it (stopping first when called from a callback), and `relay.getLoop()` exposes
+it for sharing. A borrowed loop is never closed by the relay.
+
 The `examples/signal_bus.nim` demo drives this from an HTTP endpoint
 (`curl "http://localhost:9005/emit?signal=3"`).
 
@@ -52,6 +61,9 @@ is platform-native with **no global signal handlers**:
 - Windows: `SetConsoleCtrlHandler` (Ctrl+C)
 
 ```nim
+import powpow
+import powpow/signal
+
 let relay = newOsSignalRelay(loop)
 
 relay.listen(SignalInt, proc() = echo "SIGINT — shutting down gracefully")
@@ -60,6 +72,16 @@ relay.listen(SignalHup, proc() = echo "SIGHUP — reload config")
 
 watchOsSignals(relay, [SignalInt, SignalTerm, SignalHup])
 loop.run()
+```
+
+Or without a loop (the relay owns a private one):
+
+```nim
+let relay = newOsSignalRelay()
+
+relay.listen(SignalInt, proc() = relay.stop())
+relay.watchOsSignal(SignalInt)
+relay.run()       # blocks; frees the owned loop on exit
 ```
 
 `OsSignal` enum:

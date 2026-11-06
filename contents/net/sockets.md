@@ -22,7 +22,7 @@ isIpAddress("10.0.0.1")                                    # true
 
 `resolveAddr*` uses the platform resolver (`getaddrinfo`) and is the blocking
 path used at startup (e.g. `tcp.listen`). For run-time resolution on the loop,
-use [async DNS](../core/dns.md).
+use [async DNS](../core/dns).
 
 ## Socket options
 
@@ -64,7 +64,9 @@ while remain > 0:
 ```
 
 `SendFileChunkSize` is 65536; `DefaultSendFileChunk` is 0 (send all).
-On Windows powpow uses `TransmitFile` instead.
+On Windows the zero-copy path is not wired yet (see the `TransmitFile` TODO
+in `net/common.nim`) — file sends fall back to a read+`send` loop with the
+same bytes on the wire.
 
 ## File helpers
 
@@ -87,5 +89,5 @@ is 107.
 
 ## API reference
 
-Full signatures: [common API](https://openpeeps.github.io/powpow/theindex.html). Also see [TCP](tcp.md) and
-[UDP](udp.md).
+Full signatures: [common API](https://openpeeps.github.io/powpow/theindex.html). Also see [TCP](tcp) and
+[UDP](udp).

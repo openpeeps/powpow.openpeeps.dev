@@ -51,6 +51,9 @@ Explicit variants remain available for control cases:
 
 ## Standalone server
 
+Server-side WebSocket stays in the default `import powpow` surface (via
+`proto`):
+
 ```nim
 let wss = newWsServer(loop)          # or newWsServer() for its own loop
 
@@ -64,7 +67,10 @@ wss.listen("0.0.0.0", 9001)
 wss.start()
 ```
 
-`handshakeCount()` reports in-flight handshakes.
+`handshakeCount()` reports in-flight handshakes. A server created without a
+loop owns it (`ownsLoop`): `start()`/`run()` free it on exit, and
+`stop()`/`close()` free it (stopping first when called from a callback). A
+server created with a loop never closes it — the owner frees the loop.
 
 ## WebSocket over HTTP (same port)
 
@@ -92,9 +98,12 @@ order is selected and echoed back as `Sec-WebSocket-Protocol`.
 
 `newWsClient()` mirrors `newWsServer()`: it creates and owns its private
 event loop, exposes setter-style callbacks that survive reconnects, and runs
-until closed.
+until closed. It lives in the opt-in `powpow/ws` module:
 
 ```nim
+import powpow
+import powpow/ws
+
 let client = newWsClient(WsReconnectPolicy(
   maxRetries: 5,          # -1 = unlimited
   backoffStartMs: 250,    # exponential backoff with jitter between retries
@@ -169,11 +178,13 @@ parameters as the high-level client (`extraHeaders`, `protocols`,
 | `maxHandshakeSessions` | cap in-flight handshakes (stall-DoS defense) |
 | `idleTimeoutMs` | post-upgrade idle close |
 
-Per-message deflate is supported. Frame caps still apply in
-`maxFrameSize = 0` ("unlimited") mode, see [security](security.md).
+Per-message deflate is not negotiated — every frame goes out uncompressed,
+and the caps still apply in `maxFrameSize = 0` ("unlimited") mode, see
+[security](security). Compression (like HTTP response compression) is future
+work.
 
 ## Related
 
-[HTTP server guide](http/server.md), the runnable
+[HTTP server guide](http/server), the runnable
 [wsclient example](https://github.com/openpeeps/powpow/blob/main/examples/wsclient.nim), and the generated
 [API reference](https://openpeeps.github.io/powpow/theindex.html) for full signatures.

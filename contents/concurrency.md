@@ -41,11 +41,11 @@ shutdown pipe.
 
 - **`RateLimiter` is thread-safe**: its bucket table is lock-guarded, so a
   single limiter can be shared across workers
-  ([rate limiting](http/rate-limiting.md), `tests/test_ratelimit_threads.nim`).
+  ([rate limiting](http/rate-limiting), `tests/test_ratelimit_threads.nim`).
 - **`OnRequestCallback` must be `{.gcsafe.}`**: the handler signature enforces
   it, since it runs on multiple threads.
 - **`postToLoop`** is the safe way to get work onto a specific loop from another
-  thread ([event loop](core/event-loop.md)); the loop's `stop()` is also
+  thread ([event loop](core/event-loop)); the loop's `stop()` is also
   thread-safe.
 - Each worker runs its own loop; don't share loop-owned state across loops
   without explicit synchronization.
@@ -55,9 +55,11 @@ shutdown pipe.
 A self-managed worker pool for CPU-bound or blocking work that must not stall
 an event loop. It owns `N` persistent workers plus one dispatch thread running a
 private event loop. Job results are delivered on that loop, so every callback
-fires serialized on the same thread.
+fires serialized on the same thread. Opt-in: `import powpow/threadpool`.
 
 ```nim
+import powpow/threadpool
+
 let tp = newThreadPool(size = 4)
 
 discard tp.submitWork(
@@ -162,4 +164,4 @@ services, not scheduling throughput:
 ## API reference
 
 Full signatures: [generated API reference](https://openpeeps.github.io/powpow/theindex.html). Related:
-[server](http/server.md), [event loop](core/event-loop.md).
+[server](http/server), [event loop](core/event-loop).

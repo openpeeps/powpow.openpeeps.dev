@@ -19,7 +19,7 @@ when compiling a Supranim app.
 > [!WARNING]
 > The library is not production-ready yet and may contain bugs and security
 > vulnerabilities. It has been tested on Linux and macOS, but may not work on all
-> platforms. See [security](security.md) for the hardening already in place.
+> platforms. See [security](security) for the hardening already in place.
 
 ## Design philosophy
 
@@ -28,12 +28,12 @@ when compiling a Supranim app.
   parsers, and lets you (or a framework) build the rest on top.
 - **Bring-your-own-router.** The HTTP server exposes an
   `OnRequestCallback` and leaves routing entirely to the caller
-  (see [HTTP server](http/server.md)).
+  (see [HTTP server](http/server)).
 - **Zero-copy where it counts.** Request fields are materialized lazily from
   byte offsets; files are sent with `sendfile`; responses can be streamed.
 - **Platform-native event notification.** Built on top of `epoll` (Linux),
   `kqueue` (BSD, macOS) and `IOCP` (Windows), with a `poll` fallback — plus an
-  opt-in Linux **io_uring** backend ([guide](io_uring.md)) that drives
+  opt-in Linux **io_uring** backend ([guide](io_uring)) that drives
   everything through submission/completion ops instead of readiness events.
 
 ## Architecture
@@ -50,9 +50,9 @@ when compiling a Supranim app.
         ┌───────────┼──────────────┐
         │           │              │
    ┌────┴────┐  ┌───┴────┐   ┌─────┴─────┐
-   │ signal  │  │  net   │   │  proto    │
-   │relay+OS │  │tcp udp │   │http ws    │
-   │ signals │  │dns tls │   │httpserver │
+   │ opt-in: │  │  net   │   │  proto    │
+   │sig,fsw, │  │tcp udp │   │http ws    │
+   │tpool,ws │  │dns tls │   │httpserver │
    └─────────┘  └────────┘   │multithread│
                              │ratelimit  │
                              └───────────┘
@@ -63,11 +63,14 @@ The aggregate module `src/powpow.nim` re-exports:
 - `types` — core shared types
 - `platform` — the active I/O backend (except `close`, which lives on `Loop`)
 - `loop` — the event loop
-- `net` — TCP, UDP, DNS, TLS, socket helpers, raw-fd streams
-- `proto` — HTTP, WebSocket, multi-threaded server, rate limiter
-- `signal` — the signal relay and OS signal handling
-- `fswatch` — file system monitoring
-- `stream` — raw-fd streaming (`IoStream`, re-exported via `net`)
+- `net` — TCP, UDP, DNS, TLS, socket helpers, raw-fd streams (incl. `stream`)
+- `proto` — HTTP, WebSocket, multi-threaded server, rate limiter, clients,
+  proxy, HTTP/2
+
+`signal` (relay + OS signals), `fswatch` (file watching), `threadpool`
+(worker pool) and the `ws` client facade are **opt-in**: `import
+powpow/signal`, `powpow/fswatch`, `powpow/threadpool`, `powpow/ws`
+respectively. Server-side WebSocket stays available through `proto`.
 
 ## Feature matrix
 
@@ -82,7 +85,7 @@ The aggregate module `src/powpow.nim` re-exports:
 | Raw-fd streaming (`stream.nim`) | Done — `IoStream` for pipes/socketpair/UDS/IPC; edge-triggered drain, write buffering, read backpressure; Windows not yet implemented |
 | HTTP/1.1 parser (`proto/http.nim`) | Done — incremental zero-copy, chunked, streaming, multipart |
 | HTTP server (`proto/httpserver.nim`) | Done — own-router design, static files, Range/conditional requests, pipelining |
-| WebSocket (`proto/ws.nim`) | Done: RFC 6455 with standalone and HTTP-upgrade servers, `wss://` on both ends, subprotocols, custom headers, keepalive timers, a self-managed client (`newWsClient`) with auto-reconnect, and deflate |
+| WebSocket (`proto/ws.nim`) | Done: RFC 6455 with standalone and HTTP-upgrade servers, `wss://` on both ends, subprotocols, custom headers, keepalive timers, and a self-managed client (`newWsClient`, opt-in via `powpow/ws`) with auto-reconnect |
 | Multi-threaded HTTP server (`proto/multithread.nim`) | Done — `SO_REUSEPORT`, one loop per worker |
 | Thread pool (`threadpool.nim`) | Done — N workers + dispatch thread owning a private loop; generic `submitWork[T]` results delivered as serialized callbacks; graceful drain close + discard shutdown |
 | TLS (`net/tls.nim`) | Done — OpenSSL, implicit + upgrade (not on Windows) |
@@ -90,7 +93,7 @@ The aggregate module `src/powpow.nim` re-exports:
 | SIMD scanning (`proto/simdscan.nim`) | Done — SSE2 CRLF detection with scalar fallback |
 | Rate limiting (`proto/ratelimit.nim`) | Done — sliding window per IP, multi-window support (e.g. hourly + daily quotas checked atomically) |
 | io_uring backend (`io/uring.nim`) | Done — opt-in Linux submission-based backend: full io_uring API binding, probe-based feature detection, zero-copy `SEND_ZC` + `SPLICE` file sends, registered buffers (`-d:powpowIoUring`) |
-| HTTP/2 (`proto/http2*.nim`) | Experimental — RFC 7540 server + multiplexing client with full HPACK, h2c (prior knowledge + Upgrade) and h2 over TLS/ALPN, flow control, GOAWAY draining; no push/priority yet (see [HTTP/2](http/http2.md)) |
+| HTTP/2 (`proto/http2*.nim`) | Experimental — RFC 7540 server + multiplexing client with full HPACK, h2c (prior knowledge + Upgrade) and h2 over TLS/ALPN, flow control, GOAWAY draining; no push/priority yet (see [HTTP/2](http/http2)) |
 | HTTP/3 (QUIC) | Not planned |
 
 ## Feature details
@@ -100,7 +103,7 @@ The aggregate module `src/powpow.nim` re-exports:
 - I/O multiplexing via kqueue (macOS/BSD), epoll (Linux), IOCP (Windows) or poll (fallback)
 - **io_uring** (Linux, opt-in): the same loop driven by submission/completion
   ops — one `io_uring_enter` per iteration, op-driven sockets, kernel-timeout
-  sleeps ([guide](io_uring.md))
+  sleeps ([guide](io_uring))
 - 4-level hierarchical timer wheel — O(1) insert/fire/cancel
 - One-shot and repeating interval timers
 - Deferred callbacks (executed before each I/O poll iteration)
@@ -140,14 +143,17 @@ The aggregate module `src/powpow.nim` re-exports:
 
 ### Async DNS
 - In-loop DNS resolver (RFC 1035) — no blocking `getaddrinfo`, no worker threads
-- Reads `/etc/hosts` and `/etc/resolv.conf` (system resolver config)
-- A + AAAA queries with A-fallback; retries with timeout/attempts
+- Reads `/etc/hosts` (checked first) and `/etc/resolv.conf` (nameservers incl.
+  IPv6 with `%scope`, `search`/`domain`, `ndots`, `timeout`, `attempts`)
+- A + AAAA queries with A-fallback; TCP retry for truncated responses
 - TTL-based result cache + negative caching
-- `resolveAddrAsync` for users; `connect` uses it automatically
+- `resolveAddr` (callback) / `resolveAddrAsync` (awaitable `Future`) for users;
+  `connect` uses it automatically
 - Numeric IP literals resolve inline (zero DNS I/O)
 
 ### OS signals
-- In-process `SignalRelay` pub/sub bus (listen / listenOnce / unlisten)
+- In-process `SignalRelay` pub/sub bus (listen / listenOnce / unlisten;
+  opt-in via `import powpow/signal`)
 - `watchOsSignal` / `watchOsSignals` deliver real OS signals through the loop
 - `OsSignal` enum: SIGHUP, SIGINT, SIGQUIT, SIGUSR1/2, SIGPIPE, SIGALRM, SIGTERM,
   SIGURG, SIGCHLD, SIGIO
@@ -195,8 +201,8 @@ The aggregate module `src/powpow.nim` re-exports:
 - Standalone WebSocket server mode
 - HTTP upgrade from `HttpServer` routes
 - Text, binary, ping/pong, and close frames
-- Per-message deflate extension
 - Masked frame handling
+- High-level auto-reconnect client (`newWsClient`, opt-in via `import powpow/ws`)
 
 ### Multi-threaded HTTP server
 - `SO_REUSEPORT` kernel-level connection distribution
@@ -223,6 +229,6 @@ The aggregate module `src/powpow.nim` re-exports:
 
 ## Where to go next
 
-- [Getting started](getting-started.md)
-- [Examples index](examples.md) — 30 runnable programs covering every feature
+- [Getting started](getting-started)
+- [Examples index](examples) — 30 runnable programs covering every feature
 - [API reference](https://openpeeps.github.io/powpow/theindex.html)
