@@ -2,7 +2,7 @@ div.navbar-container-area.sticky-top.user-select-none
   if $this["site"]["hasNotifications"] == true:
     div.text-center.border-bottom.border-booyaka.p-1.small: $this["config"]["header"]["notification"]
   nav.navbar.navbar-expand-lg.py-1
-    div.container.d-flex
+    div.container-fluid.d-flex
       a.navbar-brand.fw-bold.py-0 href=toString($this["version"]["path"]) & "/"
         img src=$this["site"]["logo"] height="32"
         if $this["site"]["hasLogo"] != true or $this["config"]["metadata"]["logo_keep_gradient"] == true:

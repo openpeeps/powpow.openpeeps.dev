@@ -1,6 +1,7 @@
 metadata:
   title: "powpow — High-performance event notification for Nim"
   url: "https://powpow.openpeeps.dev"
+  logo: "/assets/powpow_logo.png"
   description: "Documentation for powpow, a high-performance event notification library for Nim: event loop, TCP/UDP, HTTP/1.1, WebSocket, TLS and more."
   keywords: ["powpow", "nim", "networking", "event loop", "http", "websocket", "tcp", "udp", "documentation"]
 appearance:
