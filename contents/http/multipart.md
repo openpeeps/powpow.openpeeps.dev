@@ -51,9 +51,9 @@ parser:
 | `server.maxFieldSize` | single text field |
 | `server.maxBodySize` | total request body |
 
-Violations reply `413` instead of raising — see [security](../security.md).
+Violations reply `413` instead of raising — see [security](../security).
 
 ## API reference
 
 Full signatures: [HTTP parser API](https://openpeeps.github.io/powpow/theindex.html). Related:
-[requests](requests.md), [security](../security.md).
+[requests](requests), [security](../security).

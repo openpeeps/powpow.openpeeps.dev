@@ -101,11 +101,11 @@ let secure = tlsClient.get("https://example.com/")
 URLs and header names/values are validated (`HttpError` on control
 characters or CR/LF injection). Malformed-response hardening is covered by
 `tests/test_httpclient.nim` and `tests/test_httpclient_security.nim` — see
-[testing](../testing.md) and [security](../security.md).
+[testing](../testing) and [security](../security).
 
 ## API reference
 
 Full signatures:
 [generated API reference](https://openpeeps.github.io/powpow/theindex.html).
-Related: [HTTP server](server.md), [requests](requests.md),
-[static files](static-files.md).
+Related: [HTTP server](server), [requests](requests),
+[static files](static-files).

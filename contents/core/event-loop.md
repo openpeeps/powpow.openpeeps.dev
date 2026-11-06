@@ -12,7 +12,7 @@ single-threaded non-blocking reactor over the platform's native multiplexer
 (`kqueue` on macOS/BSD, `epoll` on Linux, `IOCP` on Windows, `poll` as a
 fallback). On Linux the same loop can instead use the opt-in **io_uring**
 backend, where I/O is driven by submission/completion ops rather than
-readiness events — see the [io_uring guide](../io_uring.md).
+readiness events — see the [io_uring guide](../io_uring).
 
 Runnable example: [`examples/timers_scheduler.nim`](https://github.com/openpeeps/powpow/blob/main/examples/timers_scheduler.nim).
 
@@ -23,8 +23,18 @@ let loop = newLoop()
 ```
 
 Most higher-level helpers can create their own loop for you (`newHttpServer()`,
-`newWsServer()`), but passing an explicit `Loop` is how you compose several
-services — HTTP, DNS, signals, timers — into one process and one thread.
+`newWsServer()`, `newH2Server()`, `newTcpServer()`, `bindUdp()`,
+`connectUdp()`, `newFileWatcher()`, `openStream()`, `newStreamPair()`,
+`newSignalRelay()`, `newOsSignalRelay()`, the blocking `connect()` family and
+the one-shot `resolve*Async` DNS overloads), but passing an explicit `Loop` is
+how you compose several services — HTTP, DNS, signals, timers — into one
+process and one thread.
+
+Ownership rule shared by all of them: a handle created **without** a loop owns
+it (`ownsLoop`) — `close()` frees it (stopping first when called from a
+callback) and `run()` frees it on exit. A handle created **with** a loop never
+closes it; the owner frees the loop. `getLoop()` exposes either loop for
+sharing, and `stop()` is the from-a-callback form of `close()`.
 
 ## The main loop
 
@@ -173,7 +183,7 @@ You almost never touch these directly — see the [platform API page](https://op
 
 The **io_uring** backend shares this same `Loop` type and the timer
 wheel/deferred/idle machinery; only the I/O driving differs (submission-based
-ops instead of readiness events). See the [io_uring guide](../io_uring.md).
+ops instead of readiness events). See the [io_uring guide](../io_uring).
 
 ## API reference
 

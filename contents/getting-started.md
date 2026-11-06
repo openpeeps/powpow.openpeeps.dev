@@ -26,10 +26,9 @@ Dependencies are resolved automatically by nimble:
 nimble install powpow
 ```
 
-For a local checkout, from the repository root:
-
+If you prefer [clue](https://github.com/openpeeps/powpow), an alternative package manager to Nimble:
 ```bash
-nimble install -Y
+clue install powpow
 ```
 
 ## Your first HTTP server
@@ -87,18 +86,18 @@ nim c -r examples/httpserver.nim          # HTTP server on :9000
 nim c -r --threads:on examples/httpserver_threads.nim   # multi-threaded on :9000
 ```
 
-See the [examples index](examples.md) for the full list, ports and test
+See the [examples index](examples) for the full list, ports and test
 commands.
 
 ## Build flags and notes
 
 - **`--threads:on`** — required for the multi-threaded server
-  ([concurrency](concurrency.md)) and the thread-safety tests. The core event
+  ([concurrency](concurrency)) and the thread-safety tests. The core event
   loop itself is single-threaded and does not require it.
 - **`-d:release`** — always use release for benchmarking or real workloads.
 - **`--features:io_uring` / `-d:powpowIoUring`** — Linux only: switch the I/O
   backend to io_uring (submission-based). The same code runs unchanged; see the
-  [io_uring guide](io_uring.md) for the zero-copy options and configuration.
+  [io_uring guide](io_uring) for the zero-copy options and configuration.
 - **`-d:powpowEnableMetrics`** — compile-time opt-in for event-loop metrics
   (roadmap item; not yet implemented).
 - **Windows** — supported via IOCP, but TLS is not available on Windows and the
@@ -113,21 +112,21 @@ nimble testThreads     # thread-safety smoke tests (--threads:on)
 nimble testSmuggler    # parser fuzzing with the smuggler package (if installed)
 ```
 
-See [testing](testing.md) for the full test-suite map.
+See [testing](testing) for the full test-suite map.
 
 ## A note on routing
 
 powpow deliberately ships **no router**. Routing is up to you — simple
 `if`/`case` on `getPath()`, or a framework such as
 [Supranim](https://github.com/supranim/supranim) built on top of powpow's
-`OnRequestCallback`. See the [HTTP server guide](http/server.md) for the routing
+`OnRequestCallback`. See the [HTTP server guide](http/server) for the routing
 idioms used by the examples.
 
 ## Where to go next
 
-- [Overview](overview.md) — architecture and the full feature matrix
-- [Event loop](core/event-loop.md) — the foundation everything sits on
-- [HTTP server](http/server.md) — routing, responses, config
-- [HTTP client](http/client.md) — blocking and async requests
-- [HTTP/2](http/http2.md) — multiplexed `h2c`/`h2`
-- [Examples index](examples.md) — 30 runnable programs
+- [Overview](overview) — architecture and the full feature matrix
+- [Event loop](core/event-loop) — the foundation everything sits on
+- [HTTP server](http/server) — routing, responses, config
+- [HTTP client](http/client) — blocking and async requests
+- [HTTP/2](http/http2) — multiplexed `h2c`/`h2`
+- [Examples index](examples) — 30 runnable programs

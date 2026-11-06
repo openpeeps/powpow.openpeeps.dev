@@ -35,6 +35,19 @@ srv.listen("127.0.0.1", 9000)
 loop.run()
 ```
 
+Or without a loop (the server creates and owns a private one):
+
+```nim
+let srv = newH2Server() do (req: H2Request, res: H2Response):
+  res.header("content-type", "text/plain").send("hello " & req.path)
+srv.listen("127.0.0.1", 9000)
+srv.run()       # blocks; frees the owned loop on exit
+```
+
+`srv.getLoop()` exposes the loop when you need to share it; `srv.stop()` /
+`srv.close()` free an owned loop (a borrowed loop is never closed), and
+`srv.start("127.0.0.1", 9000)` is shorthand for `listen` + `run`.
+
 With TLS (`h2`):
 
 ```nim
@@ -124,7 +137,7 @@ the default readiness backends (epoll/kqueue) and the guarded io_uring
 backend (`-d:powpowIoUring`): frame writes use the same `SEND`/`SEND_ZC`
 and `SPLICE` pumps as HTTP/1.1, and TLS uses the same memory-BIO layer.
 Multiplexed streams sharing one TCP connection are exactly the workload
-io_uring parallelism suits best (see [performance](../performance.md)).
+io_uring parallelism suits best (see [performance](../performance)).
 
 ## Current boundaries
 

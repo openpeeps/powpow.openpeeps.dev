@@ -10,8 +10,8 @@ Inside your handler you receive an `HttpRequest` (`req`). It is a lazy, parsed
 view of the HTTP request: accessors materialize strings on demand, and the body
 is available either fully-buffered or as a stream.
 
-See also [parser](parser.md) for how requests are produced, and
-[server](server.md) for the handler/response side.
+See also [parser](parser) for how requests are produced, and
+[server](server) for the handler/response side.
 
 ## Request line
 
@@ -79,7 +79,7 @@ let tmpFile = req.streamToFile(tmpDir = "")   # string — path to the temp file
 ```
 
 `streamToFile` streams the raw body straight to a temp file (zero buffering).
-See [multipart](multipart.md).
+See [multipart](multipart).
 
 ## Chunked / pipelining notes
 
@@ -89,5 +89,5 @@ by the server.
 
 ## API reference
 
-Full signatures: [HTTP parser API](https://openpeeps.github.io/powpow/theindex.html). Related: [server](server.md),
-[multipart](multipart.md).
+Full signatures: [HTTP parser API](https://openpeeps.github.io/powpow/theindex.html). Related: [server](server),
+[multipart](multipart).

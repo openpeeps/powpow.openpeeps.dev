@@ -87,5 +87,5 @@ and the associated constants. See [tlsapi API](https://openpeeps.github.io/powpo
 
 ## API reference
 
-Full signatures: [TLS API](https://openpeeps.github.io/powpow/theindex.html). Related: [TCP](tcp.md),
-[sockets](sockets.md).
+Full signatures: [TLS API](https://openpeeps.github.io/powpow/theindex.html). Related: [TCP](tcp),
+[sockets](sockets).

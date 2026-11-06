@@ -49,6 +49,13 @@ var a, b: IoStream
     discard b.write("echo: " & data.toStr()))
 ```
 
+Omit the `loop` and the stream (or pair) creates and owns a private one:
+`openStream(fd, onData, onClose)`, `newStreamPair(onData, onClose, …)`.
+`getLoop()` exposes it, `run()` blocks driving it, and `close()` frees the
+owned loop (stopping first when called from a callback). Closing either end of
+an owned pair tears the shared loop down, so close both ends together and treat
+the first `close` as terminal for the pair. A borrowed loop is never closed.
+
 > Note: `cast[string](data)` on an `openArray[byte]` is **not** valid — it reads
 
 ## Writing

@@ -24,6 +24,22 @@ let sock = bindUdp(loop, "0.0.0.0", 9011,
 The callback receives the sender's address and the datagram bytes. `OnUdpData =
 proc(sender: Sockaddr_storage; data: openArray[byte]) {.closure.}`
 
+Omit the `loop` and the socket creates and owns a private one:
+
+```nim
+let sock = bindUdp("0.0.0.0", 9011,
+  proc(sender: Sockaddr_storage; data: openArray[byte]) =
+    sock.sendTo(data, sender))
+
+sock.run()      # blocks, driving the owned loop
+sock.close()    # frees the socket and the owned loop
+```
+
+`sock.getLoop()` exposes the loop when you need to share it (e.g. a second
+socket or timers on the same loop). From a callback, `sock.stop()` (or
+`sock.close()`) returns from `run()` and frees the owned loop. A borrowed loop
+is never closed by the socket.
+
 ## Connected UDP socket (client)
 
 ```nim
@@ -32,7 +48,9 @@ sock.send("ping")
 ```
 
 A connected UDP socket can `send` (no address) and only receives datagrams from
-its peer.
+its peer. `connectUdp("127.0.0.1", 9011, onData)` without a loop creates and
+owns a private loop, with the same `run`/`stop`/`close`/`getLoop` lifecycle as
+a bound socket above.
 
 ## Sending
 
@@ -42,8 +60,8 @@ sock.sendTo(data, addrBuf)                # use a cached Sockaddr_storage
 sock.send(data)                           # connected sockets only
 ```
 
-The address forms re-resolve per datagram (see [async DNS](../core/dns.md) for the
-run-time resolver); `sockaddrFromIp` from [sockets](sockets.md) is the cheap way
+The address forms re-resolve per datagram (see [async DNS](../core/dns) for the
+run-time resolver); `sockaddrFromIp` from [sockets](sockets) is the cheap way
 to build a fixed destination.
 
 ## Closing
@@ -52,7 +70,10 @@ to build a fixed destination.
 sock.close()
 ```
 
+`close()` also frees the loop when the socket owns it (see above); a borrowed
+loop is left alive for its owner.
+
 ## API reference
 
-Full signatures: [UDP API](https://openpeeps.github.io/powpow/theindex.html). Related: [sockets](sockets.md),
-[TCP](tcp.md).
+Full signatures: [UDP API](https://openpeeps.github.io/powpow/theindex.html). Related: [sockets](sockets),
+[TCP](tcp).

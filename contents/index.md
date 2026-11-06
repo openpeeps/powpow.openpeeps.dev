@@ -36,7 +36,7 @@ nimble install powpow
 - **Multi-threaded** — `SO_REUSEPORT` workers, one event loop per core
 - **SIMD** — SSE2-accelerated HTTP message scanning
 - **io_uring** — opt-in Linux submission-based backend with zero-copy
-  `send_zc`, `SPLICE` file sends and registered buffers ([guide](io_uring.md))
+  `send_zc`, `SPLICE` file sends and registered buffers ([guide](io_uring))
 
 ## Getting started
 

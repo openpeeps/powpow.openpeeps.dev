@@ -12,7 +12,7 @@ for it — and it drives streaming bodies, chunked transfer encoding and
 multipart.
 
 Most users never touch the parser directly: the HTTP server feeds it for you and
-hands you an `HttpRequest` (see [requests](requests.md)). This page is for
+hands you an `HttpRequest` (see [requests](requests)). This page is for
 understanding it, or for using it standalone.
 
 ## Creating a parser
@@ -87,7 +87,7 @@ Constants enforced by the parser/server:
 | `DefaultBodyBuf` | 65536 |
 | `MaxStreamBodySize` | 512 MB |
 
-See [security](../security.md) for how these protect against DoS.
+See [security](../security) for how these protect against DoS.
 
 ## Chunked trailers
 
@@ -108,9 +108,9 @@ if parser.isComplete():
 ## Body streaming on requests
 
 For fully parsed requests, the `BodyStream` API in
-[requests](requests.md) is the higher-level way to consume bodies in chunks.
+[requests](requests) is the higher-level way to consume bodies in chunks.
 
 ## API reference
 
 Full signatures: [HTTP parser API](https://openpeeps.github.io/powpow/theindex.html). Related:
-[requests](requests.md), [server](server.md).
+[requests](requests), [server](server).

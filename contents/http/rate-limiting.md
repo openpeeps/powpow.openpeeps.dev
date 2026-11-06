@@ -64,9 +64,9 @@ else:
 `RateLimiter` guards its bucket table with a lock, so one limiter can be shared
 across the worker threads of a multi-threaded server. Covered by
 `tests/test_ratelimit_threads.nim` (`nimble testThreads`). See
-[concurrency](../concurrency.md).
+[concurrency](../concurrency).
 
 ## API reference
 
 Full signatures: [rate limiter API](https://openpeeps.github.io/powpow/theindex.html). Related:
-[server](server.md), [security](../security.md).
+[server](server), [security](../security).

@@ -7,7 +7,7 @@ keywords: ["powpow", "http", "server", "handler", "response"]
 # HTTP server
 
 `proto/httpserver.nim` is a non-blocking HTTP/1.1 server combining the TCP layer
-and the [parser](parser.md). It is deliberately **router-less**: you provide one
+and the [parser](parser). It is deliberately **router-less**: you provide one
 callback and route however you like (plain `if`/`case`, or a framework such as
 Supranim on top).
 
@@ -23,6 +23,11 @@ let server = newHttpServer()            # create its own loop
 
 `populate: bool = true` prewarms the connection/parser/response pools by
 default. `populatePools(server, poolSize = 256)` re-prewarms explicitly.
+
+A server created without a loop owns it (`ownsLoop`): `server.run()` blocks
+driving it, `server.stop()`/`server.close()` free it (stopping first when
+called from a callback). A server created with a loop never closes it — the
+owner frees the loop.
 
 ## The handler
 
@@ -42,7 +47,7 @@ proc handler(req: HttpRequest, res: HttpResponse) {.gcsafe.} =
 `OnRequestCallback = proc(req: HttpRequest, res: HttpResponse) {.gcsafe.}`
 
 The callback is `{.gcsafe.}` so it can run on multiple threads
-(see [concurrency](../concurrency.md)).
+(see [concurrency](../concurrency)).
 
 ## Starting / listening
 
@@ -50,8 +55,9 @@ The callback is `{.gcsafe.}` so it can run on multiple threads
 server.start(handler, Port(9000))            # listen on 0.0.0.0:9000
 server.listen("127.0.0.1", 9000)             # explicit address (HTTP)
 server.listenUnix("/tmp/app.sock", 0o660)    # UDS, POSIX
-server.stop()
-server.close()
+server.run()                                 # block driving the loop
+server.stop()                                # stop + free an owned loop
+server.close()                               # same as stop (loop freed iff owned)
 ```
 
 `getLoop(server)` returns the server's loop; `ensureTcpServer` lazily creates
@@ -113,17 +119,17 @@ discard res.getConn().send("partial bytes")
 - `serveFile(res, req, path, fsRoot, ...)` — full conditional/Range semantics
 - `serveStatic(res, req, urlPrefix, fsRoot, indexFiles)` — static site serving
 
-See [static files](static-files.md) for the full matrix.
+See [static files](static-files) for the full matrix.
 
 ## Server configuration
 
-`HttpServer` public fields (see [security](../security.md) for the recommended
+`HttpServer` public fields (see [security](../security) for the recommended
 production values):
 
 | Field | Purpose |
 |---|---|
 | `handler` | the `OnRequestCallback` |
-| `sslCtx` | TLS context → HTTPS (see [TLS](../net/tls.md)) |
+| `sslCtx` | TLS context → HTTPS (see [TLS](../net/tls)) |
 | `maxBodySize` | max request body (0 = use `maxStreamBodySize`) |
 | `maxStreamBodySize` | hard cap for streamed bodies |
 | `maxFileSize` | max single uploaded file part |
@@ -141,7 +147,8 @@ production values):
 
 ## API reference
 
-Full signatures: [generated API reference](https://openpeeps.github.io/powpow/theindex.html). Related:
-[requests](requests.md), [static files](static-files.md),
-[multipart](multipart.md), [rate limiting](rate-limiting.md),
-[client](client.md), [proxy](proxy.md), [HTTP/2](http2.md).
+Full signatures: [generated API reference](https://openpeeps.github.io/powpow/theindex.html).
+
+Related: [requests](requests), [static files](static-files),
+[multipart](multipart), [rate limiting](rate-limiting),
+[client](client), [proxy](proxy), [HTTP/2](http2).

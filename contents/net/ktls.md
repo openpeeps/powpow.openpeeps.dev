@@ -6,7 +6,7 @@ keywords: ["powpow", "ktls", "kernel tls", "linux", "offload", "sendfile", "zero
 
 # Kernel TLS (kTLS)
 
-powpow's [TLS](tls.md) runs the record layer in **userspace**: every byte is
+powpow's [TLS](tls) runs the record layer in **userspace**: every byte is
 encrypted by OpenSSL and copied into the socket. kTLS is the Linux kernel
 feature that moves that record layer *into the kernel*, so a connected socket
 encrypts and decrypts on its own.
@@ -51,7 +51,7 @@ error and no behaviour change.
 | Linux `tls` module loaded (`sudo modprobe tls`) | The record layer ULP is a separate module, not built in |
 | OpenSSL ≥ 3.0 built with `enable-ktls` | OpenSSL drives the key installation; without it `SSL_OP_ENABLE_KTLS` is inert |
 | A kTLS-capable negotiated cipher | AES-GCM, AES-CCM and ChaCha20-Poly1305; everything else stays in userspace |
-| A **socket-BIO** backend | The epoll/kqueue readiness loop. The [io_uring](../io_uring.md) backend runs TLS over memory BIOs, where OpenSSL never sees the fd and cannot offload |
+| A **socket-BIO** backend | The epoll/kqueue readiness loop. The [io_uring](../io_uring) backend runs TLS over memory BIOs, where OpenSSL never sees the fd and cannot offload |
 
 `modprobe` is not persistent across reboots. To make it stick:
 
@@ -236,8 +236,8 @@ bytes to a kernel that is not encrypting them.
 
 `KtlsMode`, `configureKtls`, `enableKtls`, `disableKtls`, `ktlsSupported`,
 `ktlsTxActive`, `ktlsRxActive`, `ktlsActive`, `ktlsTxInstalled`,
-`ktlsRxInstalled` — see [TLS](tls.md) for the surrounding API, and
+`ktlsRxInstalled` — see [TLS](tls) for the surrounding API, and
 [TLS API](https://openpeeps.github.io/powpow/theindex.html) for full signatures.
 
-Related: [TLS](tls.md) · [static files](../http/static-files.md) ·
-[io_uring](../io_uring.md) · [performance](../performance.md)
+Related: [TLS](tls) · [static files](../http/static-files) ·
+[io_uring](../io_uring) · [performance](../performance)

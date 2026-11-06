@@ -20,7 +20,7 @@ The whole backend is implemented on **raw `io_uring_setup` / `io_uring_enter` /
 > TCP are serialized per connection, so io_uring reaches epoll parity rather
 > than dramatically outpacing it on a single-connection benchmark; the wins show
 > as concurrency scales and for zero-copy file serving. See
-> [performance](performance.md) for the full picture, including where HTTP/2
+> [performance](performance) for the full picture, including where HTTP/2
 > and QUIC multiplexing will make io_uring's parallelism count.
 
 ## Enabling it

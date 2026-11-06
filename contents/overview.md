@@ -37,15 +37,15 @@ It is also used as a networking backend by
 
 ## Architecture
 
-```
+```text
                      ┌──────────────────────────────┐
                      │         powpow.nim           │  (aggregate entry, re-exports)
                      └──────┬──────────┬────────────┘
-                ┌───────────┴──┐   ┌────┴─────────────┐
-                │     loop     │   │     platform     │
-                │  timer wheel │   │ epoll|kqueue|    │
-                │  defer/idle  │   │ poll|iocp        │
-                └───┬──────────┘   └──────────────────┘
+                ┌───────────┴──┐  ┌────┴─────────────┐
+                │     loop     │  │     platform     │
+                │  timer wheel │  │ epoll|kqueue|    │
+                │  defer/idle  │  │ poll|iocp        │
+                └───┬──────────┘  └──────────────────┘
         ┌───────────┼──────────────┐
         │           │              │
    ┌────┴────┐  ┌───┴────┐   ┌─────┴─────┐

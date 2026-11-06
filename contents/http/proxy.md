@@ -87,5 +87,5 @@ nc 127.0.0.1 9020        # type a line; the backend echoes it back
 
 Full signatures:
 [generated API reference](https://openpeeps.github.io/powpow/theindex.html).
-Related: [TCP](../net/tcp.md), [HTTP server](server.md),
-[concurrency](../concurrency.md).
+Related: [TCP](../net/tcp), [HTTP server](server),
+[concurrency](../concurrency).

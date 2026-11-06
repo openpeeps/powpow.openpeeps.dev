@@ -78,4 +78,4 @@ override the defaults.
 ## API reference
 
 Full signatures: [HTTP server API](https://openpeeps.github.io/powpow/theindex.html). Related:
-[server](server.md).
+[server](server).

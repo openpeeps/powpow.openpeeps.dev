@@ -1,0 +1,845 @@
+import Fuse from './vendor/fuse.mjs'
+
+/**
+ * Booyaka Client App
+ *
+ * This module initializes the client-side application, sets up UI interactions,
+ * and provides utility functions for features like sticky sidebars and "time ago" formatting.
+ *
+ * Dependencies are vendored under `./vendor/` (relative imports only, no npm).
+ * After editing, rebuild the committed dist with Squeezy:
+ *
+ *   squeezy bundle src/themes/default/js/app.js \
+ *     -o src/themes/default/assets/app.js --minify --format iife --name UI
+ */
+const defaultAppOpts = {
+  /**
+   * Enable sticky sidebars that remain visible below the navbar when scrolling.
+   * This is useful for keeping navigation or other important elements accessible.
+   */
+  enableStickySidebar: true,
+
+  /**
+   * Enable animated alerts that follow the mouse cursor within the alert box.
+   * This adds a dynamic visual effect to alert messages, making them more engaging.
+   * The animation allows the alert to move slightly in response to mouse movements,
+   * creating an interactive experience for the user.
+  */
+  enableAnimatedAlerts: true
+}
+
+/**
+ * Callbacks registered via `UI.onReload` that run every time a page is
+ * loaded or swapped via SPA navigation.
+ */
+const reloadCallbacks = [];
+
+const UI = {
+  /**
+   * Initialize the application with the given options.
+   * This function sets up the UI features based on the provided options.
+   * It also adds necessary event listeners and applies styles to checkboxes.
+   * 
+   * @param {Object} opts - Configuration options for initializing the app.
+   * @param {boolean} opts.enableStickySidebar - Whether to enable sticky sidebars.
+   * @param {callback} opts.fetchAndSwapCallback - Optional callback to override the default fetchAndSwap behavior.
+   *
+  */
+  init: function(opts = defaultAppOpts) {
+    console.log("Booyaka Initialized");
+    opts.enableStickySidebar && this.initStickySidebar();
+    opts.enableAnimatedAlerts && this.initAnimatedAlerts();
+    this.initTimeAgo();
+    this.initDropdowns();
+    
+    this.initSmoothAnchors();
+    this.initExternalLinksDecorator();
+    this.initSpotlightSearch();
+    this.initShareButtons();
+    this.initCodeCopy();
+    this.initTheme();
+
+    // Tracks the URL of the currently displayed content so spurious or
+    // duplicate popstate events can be ignored.
+    let currentSpaUrl = location.pathname + location.search;
+
+    const fetchSwapCallback = function() {
+      opts.enableStickySidebar && this.initStickySidebar();
+      opts.fetchAndSwapCallback && opts.fetchAndSwapCallback(); // custom callback for additional initialization
+      opts.enableAnimatedAlerts && this.initAnimatedAlerts();
+      this.initTimeAgo();
+    
+      this.initSmoothAnchors();
+      this.initExternalLinksDecorator();
+
+      sidebarNavigation.querySelectorAll('a').forEach(link => link.classList.remove('active', 'booyaka-active'));
+      // after fetching new content, we want to make the current page's link active in the sidebar
+      const currentPath = location.pathname;
+      const activeLink = sidebarNavigation.querySelector(`a[href="${currentPath}"]`);
+      if (activeLink) {
+        activeLink.classList.add('active', 'booyaka-active');
+      }
+
+      this.initTheme();
+      this.triggerReload();
+
+      // The address bar already reflects the swapped content at this point
+      // (via pushState on click navigation, natively on popstate traversal).
+      currentSpaUrl = location.pathname + location.search;
+    }.bind(this) // bind 'this' to ensure the correct context inside the callback
+
+    // Intercept clicks on internal links to enable SPA-like navigation without full page reloads.
+    let sidebarNavigation = document.querySelector('.sidebar-navigation')
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('a');
+      if (a &&  a.href &&  a.origin === location.origin && !a.hasAttribute('download') && 
+        !a.target &&  !a.href.startsWith('mailto:') &&  !a.href.startsWith('tel:') && !a.getAttribute('href').startsWith('#')) {
+        e.preventDefault();
+        this.fetchAndSwap(a.pathname + a.search, true, fetchSwapCallback);
+      }
+    });
+
+    // Handle browser Back/Forward buttons: the address bar updates natively,
+    // but the swapped content must be re-fetched (click navigation above only
+    // covers pushState). Reuses the same swap + re-init path, without pushing
+    // a duplicate history entry.
+    window.addEventListener('popstate', () => {
+      const targetUrl = location.pathname + location.search;
+      if (targetUrl === currentSpaUrl) {
+        if (!location.hash) return; // spurious or duplicate event
+        // hash-only traversal: scroll to the anchor without re-fetching
+        this.scrollToAnchorTarget(decodeURIComponent(location.hash.slice(1)));
+        return;
+      }
+      this.fetchAndSwap(targetUrl, false, fetchSwapCallback);
+    });
+
+    // Apply Bootstrap classes to checkboxes for consistent styling
+    document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+      checkbox.classList.add('form-check-input'); // the bootstrap class
+    });
+
+    // Fire reload callbacks once on initial page load
+    this.triggerReload();
+  },
+
+  /**
+   * Register a callback that runs every time a page is loaded or swapped.
+   * This is useful for lazily initializing features (e.g., lazy-loading
+   * iframes) that need to be re-applied to newly fetched content.
+   *
+   * @param {callback} callback - Function to run on every page load/swap.
+   */
+  onReload: function(callback) {
+    reloadCallbacks.push(callback);
+  },
+
+  /**
+   * Run all registered `onReload` callbacks.
+   */
+  triggerReload: function() {
+    reloadCallbacks.forEach(cb => {
+      try { cb() } catch (e) { console.error(e) }
+    });
+  },
+
+  // Initialize the light/dark theme: resolves stored choice, then the
+  // configured `appearance.default_theme` (`data-theme-default`), then the
+  // OS preference. The toggle persists to localStorage. Idempotent across
+  // SPA swaps; the media listener only follows the OS while neither a
+  // stored nor a configured theme pins the choice.
+  initTheme: function() {
+    const root = document.documentElement;
+    const media = (window.matchMedia) ? window.matchMedia('(prefers-color-scheme: light)') : null;
+    const isPinned = () => {
+      let stored = null;
+      try { stored = localStorage.getItem('booyaka-theme'); } catch (e) {}
+      if (stored === 'light' || stored === 'dark') return true;
+      const configured = root.getAttribute('data-theme-default') || 'system';
+      return configured === 'light' || configured === 'dark';
+    };
+    const resolveTheme = () => {
+      let stored = null;
+      try { stored = localStorage.getItem('booyaka-theme'); } catch (e) {}
+      if (stored === 'light' || stored === 'dark') return stored;
+      const configured = root.getAttribute('data-theme-default') || 'system';
+      if (configured === 'light' || configured === 'dark') return configured;
+      return (media && media.matches) ? 'light' : 'dark';
+    };
+    root.setAttribute('data-bs-theme', resolveTheme());
+    if (media && media.addEventListener && !window.__booyakaThemeMediaBound) {
+      window.__booyakaThemeMediaBound = true;
+      media.addEventListener('change', () => {
+        if (!isPinned()) {
+          root.setAttribute('data-bs-theme', media.matches ? 'light' : 'dark');
+        }
+      });
+    }
+    document.querySelectorAll('[data-theme-toggle]').forEach(btn => {
+      if (btn.dataset.themeBound) return;
+      btn.dataset.themeBound = 'true';
+      btn.addEventListener('click', () => {
+        const next = root.getAttribute('data-bs-theme') === 'light' ? 'dark' : 'light';
+        try { localStorage.setItem('booyaka-theme', next); } catch (e) {}
+        root.setAttribute('data-bs-theme', next);
+      });
+    });
+  },
+
+  // Initialize the spotlight search feature using Fuse.js for client-side fuzzy searching.
+  initSpotlightSearch: function() {
+    // Subpath prefix for static builds served from a subdirectory
+    // (e.g. `/carne`); exposed by the layout as `<html data-base-path>`.
+    const basePath = (document.documentElement.dataset.basePath || '').replace(/\/$/, '');
+    fetch(basePath + "/results.json").then(response => response.json()).then(data => {
+      if(!data) return;
+      let spotlightForm = document.querySelector('.spotlight-form');
+      let spotlightAutocomplete = document.createElement('div');
+      spotlightAutocomplete.classList.add('position-fixed', 'border', 'list-unstyled', 'w-100', 'rounded-4', 'p-2', 'd-none', 'spotlight-autocomplete');
+      spotlightAutocomplete.style.top = '68px'
+      spotlightAutocomplete.style.zIndex = '1050';
+      spotlightAutocomplete.style.maxWidth = spotlightForm.offsetWidth + 'px';
+      spotlightAutocomplete.style.left = spotlightForm.getBoundingClientRect().left + 'px';
+      spotlightAutocomplete.style.backgroundColor = 'var(--booyaka-spotlight-bg)';
+      spotlightAutocomplete.style.boxShadow = 'var(--booyaka-spotlight-shadow)';
+      spotlightAutocomplete.style.backdropFilter = 'var(--booyaka-blur-spotlight)';
+      spotlightAutocomplete.style.webkitBackdropFilter = 'var(--booyaka-blur-spotlight)';
+
+      spotlightAutocomplete.style.maxHeight = 'var(--booyaka-spotlight-max)';
+
+      let spotlightInner = document.createElement('ul');
+      spotlightInner.classList.add('m-0', 'p-0', 'spotlight-autocomplete-list');
+      spotlightInner.style.overflowX = 'scroll';
+      spotlightInner.style.maxHeight = 'var(--booyaka-spotlight-list-max)';
+      
+      spotlightAutocomplete.appendChild(spotlightInner);
+      document.body.insertAdjacentElement('beforeend', spotlightAutocomplete);
+
+      // Create Fuse instance
+      let fuse = new Fuse(data.results, {
+        keys: ['title', 'description', 'headings'],
+        minMatchCharLength: 4, // Only match longer substrings
+        includeMatches: true,
+        threshold: 0.1, // Stricter matching
+        distance: 500,
+        useExtendedSearch: true, // Enable extended search
+        findAllMatches: false,   // Only best matches
+      });
+
+      // clicking outside the autocomplete closes it
+      document.addEventListener('click', function(event) {
+        if (!spotlightForm.contains(event.target)) {
+          spotlightAutocomplete.classList.add('d-none');
+        }
+      });
+      
+      // pressing cmd/ctrl + / focuses the search input
+      var isSpotlightFocused = false;
+      spotlightForm.querySelector('.spotlight').addEventListener('click', function() {
+        isSpotlightFocused = true;
+      });
+
+      document.addEventListener('keydown', function(event) {
+        if (event.key === '/' && (event.metaKey || event.ctrlKey)) {
+          event.preventDefault();
+          spotlightForm.querySelector('.spotlight').focus();
+          isSpotlightFocused = true;
+        }
+        // handle arrow keys and enter for navigating the autocomplete list
+        if (isSpotlightFocused) {
+          let items = spotlightAutocomplete.querySelectorAll('.spotlight-autocomplete-item');
+          var index = Array.from(items).findIndex(item => item.classList.contains('active'));
+          if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            if (index < items.length - 1) {
+              if (index >= 0) items[index].classList.remove('active');
+              items[++index].classList.add('active');
+              items[index].scrollIntoView({ block: 'nearest' });
+            }
+          } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            if (index > 0) {
+              items[index].classList.remove('active');
+              items[--index].classList.add('active');
+              items[index].scrollIntoView({ block: 'nearest' });
+            }
+          } else if (event.key === 'Enter') {
+            event.preventDefault();
+            if (index >= 0) {
+              // before navigating, we want to collect the page title
+              // and fill the search input with it, so that when user goes back,
+              // they see the title of the page they visited instead of the search query
+              let title = items[index].querySelector('span.d-block').textContent;
+              spotlightForm.querySelector('.spotlight').value = title;
+              // navigate to the selected page
+              items[index].click();
+            }
+          }
+        }
+      });
+
+      // Example search function
+      function searchDocs(query) {
+        const results = fuse.search(query);
+        // results is an array of objects: { item, refIndex, ... }
+        spotlightInner.innerHTML = '';
+        if(results.length === 0) {
+          spotlightAutocomplete.classList.add('d-none');
+          return;
+        }
+        spotlightAutocomplete.classList.remove('d-none');
+        for (let r of results) {
+          let li = document.createElement('li');
+          let a = document.createElement('a');
+          a.classList.add('d-block', 'rounded-4', 'py-2', 'px-3', 'border-0', 'text-decoration-none', 'spotlight-autocomplete-item');
+          a.href = r.item.url != '/' ? `${basePath}/${String(r.item.url).replace(/^\//, '')}` : `${basePath}/`;
+          a.innerHTML = `<span class="d-block">${r.item.title}</span><span class="text-muted small d-block lh-sm">${r.item.description}</span>`;
+          li.appendChild(a);
+
+          // use provided indices to highlight matched terms
+          for (let match of r.matches) {
+            if (match.key === 'title' || match.key === 'description') {
+              // Find the corresponding span for title/description
+              let spanSelector = match.key === 'title' ? 'span.d-block' : 'span.text-muted';
+              let span = a.querySelector(spanSelector);
+              if (span) {
+                let text = span.textContent;
+                let highlighted = '';
+                let lastIndex = 0;
+                for (let range of match.indices) {
+                  let start = range[0];
+                  let end = range[1] + 1;
+                  highlighted += text.slice(lastIndex, start);
+                  highlighted += '<mark>' + text.slice(start, end) + '</mark>';
+                  lastIndex = end;
+                }
+                highlighted += text.slice(lastIndex);
+                span.innerHTML = highlighted;
+              }
+            }
+          }
+          spotlightInner.appendChild(li);
+        }
+      }
+  
+      let spotlight = document.querySelector('.spotlight');
+
+      spotlight.addEventListener('keydown', function(event) {
+        if (event.key === '/' && (event.metaKey || event.ctrlKey)) {
+          event.preventDefault();
+          spotlight.focus();
+        } else if(event.key === 'Escape') {
+          spotlightAutocomplete.classList.add('d-none');
+        }
+      });
+  
+      spotlight.addEventListener('input', function(event) {
+        const query = event.target.value;
+        if(query.length <= 3) {
+          spotlightAutocomplete.classList.add('d-none');
+          return;
+        }
+        searchDocs(query);
+      });
+    });
+  },
+  
+  /**
+   * Copy the given text to the clipboard using the async Clipboard API,
+   * falling back to a hidden textarea + execCommand in non-secure contexts.
+   */
+  copyTextToClipboard: function(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text);
+    }
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(textarea);
+    return Promise.resolve();
+  },
+
+  /**
+   * The current page URL without query string or hash.
+   */
+  getCleanUrl: function() {
+    return location.origin + location.pathname;
+  },
+
+  /**
+   * Initializes the share dropdown interactions:
+   * - strips the `{$refUrl}` placeholder from AI provider share links
+   *   so clicking one opens the AI chat in a new tab
+   * - wires the "Copy URL" and "Copy as Markdown" actions
+   *
+   * Click handlers are delegated on `document` so they keep working after
+   * SPA content swaps. The `{$refUrl}` cleanup runs on every page
+   * load/swap through `UI.onReload`.
+   */
+  initShareButtons: function() {
+    this.onReload(() => {
+      document.querySelectorAll('a[data-ai-share]').forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && href.includes('{$refUrl}')) {
+          link.setAttribute('href', href.replace(/\{\$refUrl\}/g, ''));
+        }
+      });
+    });
+
+    document.addEventListener('click', (e) => {
+      const copyUrlItem = e.target.closest('[data-share="copy-url"]');
+      if (copyUrlItem) {
+        e.preventDefault();
+        this.copyTextToClipboard(this.getCleanUrl());
+        this.flashCopied(copyUrlItem);
+        return;
+      }
+      const copyMarkdownItem = e.target.closest('[data-share="copy-markdown"]');
+      if (copyMarkdownItem) {
+        e.preventDefault();
+        const script = document.querySelector('script[data-markdown-source]');
+        if (script) {
+          let markdown = '';
+          try { markdown = JSON.parse(script.textContent); } catch (err) { markdown = ''; }
+          this.copyTextToClipboard(markdown);
+          this.flashCopied(copyMarkdownItem);
+        }
+        return;
+      }
+    });
+  },
+
+  /**
+   * Briefly replaces the label of a share item with "Copied!".
+   */
+  flashCopied: function(item) {
+    const label = item.querySelector('[data-share-copy-label]');
+    if (!label) return;
+    const original = label.textContent;
+    label.textContent = 'Copied!';
+    setTimeout(() => { label.textContent = original; }, 1200);
+  },
+
+  /**
+   * Injects a floating click-to-copy button into every `pre > code` block,
+   * plus a language label when the fence declares one
+   * (`<code class="language-nim">` gets a "nim" tag on the left).
+   *
+   * Both are inserted before `<code>` (button on the right via CSS);
+   * the button copies the block's plain text (highlight spans excluded;
+   * line numbers are CSS counters, never in the DOM). Injection runs on
+   * every page load/swap through `UI.onReload`, while clicks are delegated
+   * on `document` so swapped content works without re-binding.
+   */
+  initCodeCopy: function() {
+    const copySvg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M7 9.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667l0 -8.666" /><path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1" /></svg>';
+    const checkSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M5 12l5 5l10 -10" /></svg>';
+
+    const injectCopyButtons = () => {
+      document.querySelectorAll('pre > code').forEach(code => {
+        const pre = code.parentElement;
+        if (!pre || pre.querySelector(':scope > .code-copy-btn')) return;
+        // language label on the left, when the fence declares one;
+        // plain blocks (`<code class="">`) get no label
+        const langMatch = /\blanguage-([\w+-]+)/.exec(code.className || '');
+        if (langMatch) {
+          const lang = document.createElement('span');
+          lang.className = 'code-lang';
+          lang.setAttribute('aria-hidden', 'true');
+          lang.textContent = langMatch[1];
+          pre.insertBefore(lang, code);
+        }
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'code-copy-btn btn btn-sm';
+        btn.setAttribute('aria-label', 'Copy code to clipboard');
+        btn.setAttribute('title', 'Copy');
+        btn.innerHTML = copySvg;
+        pre.insertBefore(btn, code);
+      });
+    };
+    this.onReload(injectCopyButtons);
+    injectCopyButtons();
+
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.code-copy-btn');
+      if (!btn) return;
+      e.preventDefault();
+      const pre = btn.closest('pre');
+      const code = pre ? pre.querySelector('code') : null;
+      if (!code) return;
+      const lines = code.querySelectorAll('.code-line');
+      const text = lines.length > 0
+        ? Array.from(lines).map(l => l.textContent).join('\n')
+        : (code.innerText != null ? code.innerText : code.textContent);
+      Promise.resolve(this.copyTextToClipboard(text)).catch(() => {}).finally(() => {
+        btn.classList.add('is-copied');
+        btn.setAttribute('aria-label', 'Copied!');
+        btn.innerHTML = checkSvg;
+        setTimeout(() => {
+          btn.classList.remove('is-copied');
+          btn.setAttribute('aria-label', 'Copy code to clipboard');
+          btn.innerHTML = copySvg;
+        }, 1500);
+      });
+    });
+  },
+
+  /**
+   * Make sidebars sticky so they remain visible when scrolling down the page.
+   */
+  initStickySidebar: function() {
+    const sidebars = document.querySelectorAll('.sticky-sidebar');
+    const navbarHeight = document.querySelector('.navbar-container-area').offsetHeight;
+    const extraPadding = 30; // px, adjust for pt-5 effect
+    function updateSidebarTop() {
+      for (const sidebar of sidebars) {
+        const scrollY = window.scrollY || window.pageYOffset;
+        sidebar.style.top = (navbarHeight + extraPadding) + 'px';
+      }
+    }
+    window.addEventListener('scroll', updateSidebarTop);
+    window.addEventListener('resize', updateSidebarTop);
+    updateSidebarTop()
+  },
+
+  /**
+   * Initialize smooth scrolling for internal anchor links.
+   * This function ensures that when users click on links that point to anchors within the page,
+   * the page will scroll smoothly to the target section, accounting for the height of the sticky navbar.
+   */
+  initSmoothAnchors: function() {
+    // Smooth scroll to anchor, offset by sticky navbar height
+    function scrollToAnchorWithOffset(hash) {
+      const navbar = document.querySelector('.navbar-container-area');
+      const navbarHeight = navbar ? navbar.offsetHeight : 0;
+      const target = document.getElementById(hash);
+      console.log(target)
+      if (target) {
+        const targetPosition = target.getBoundingClientRect().top + window.pageYOffset;
+        window.scrollTo({
+          top: targetPosition - navbarHeight,
+          behavior: 'smooth'
+        });
+      }
+    }
+
+    // Attach click event to all internal anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        const rawHash = this.getAttribute('href');
+        const hash = decodeURIComponent(rawHash.slice(1));
+        if (hash) {
+          const target = document.getElementById(hash) || document.querySelector(`[name="${hash}"]`);
+          if (target) {
+            e.preventDefault();
+            scrollToAnchorWithOffset(hash);
+            history.replaceState(null, null, rawHash);
+          }
+        }
+      });
+    });
+
+    // If page loads with a hash, scroll to it with offset
+    if (window.location.hash) {
+      setTimeout(() => {
+        const hash = window.location.hash.slice(1);
+        scrollToAnchorWithOffset(hash);
+      }, 100);
+    }
+  },
+
+
+  /**
+   * Smooth-scroll to the element identified by `hash`, offsetting for the
+   * sticky navbar. Returns true when a target was found and scrolled to.
+   *
+   * @param {string} hash - Anchor id without the leading '#'.
+   * @returns {boolean}
+   */
+  scrollToAnchorTarget: function(hash) {
+    if (!hash) return false;
+    const target = document.getElementById(hash) || document.querySelector(`[name="${hash}"]`);
+    if (!target) return false;
+    const navbar = document.querySelector('.navbar-container-area');
+    const navbarHeight = navbar ? navbar.offsetHeight : 0;
+    window.scrollTo({
+      top: target.getBoundingClientRect().top + window.pageYOffset - navbarHeight,
+      behavior: 'smooth'
+    });
+    return true;
+  },
+
+  /**
+    * Fetches the given URL and swaps the content of the current
+    * view with the new view from the response.
+    * 
+    * If the fetch fails or the expected view container is not
+    * found in the response, it falls back to a full page reload.
+    * 
+    * On every successful swap the tab title is synced from the fetched
+    * view's `data-page-title` (SPA responses carry no layout, hence no
+    * `<title>` element to read).
+    *
+    * @param {string} url - The URL to fetch and swap.
+    * @param {boolean} pushState - Whether to push the new URL to the browser history (default: true).
+    * @param {callback} callback - Optional callback to execute after successful content swap.
+    * @returns {void}
+   */
+  fetchAndSwap(url, pushState = true, callback) {
+    fetch(url, {headers: {'X-Requested-With': 'spa'}})
+      .then(resp => {
+        if (!resp.ok) throw new Error('Network error');
+        return resp.text();
+      })
+      .then(html => {
+        // parse the returned HTML and extract the new view
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newView = doc.querySelector('[data-view]');
+        const currentView = document.querySelector('[data-view]');
+        const newToc = doc.querySelector('[data-view-right]');
+        const currentToc = document.querySelector('[data-view-right]');
+        let swapped = false;
+        if (newView && currentView) {
+          currentView.innerHTML = newView.innerHTML;
+          swapped = true;
+        }
+        if (newToc && currentToc) {
+          currentToc.innerHTML = newToc.innerHTML;
+          swapped = true;
+        }
+        if (swapped) {
+          if (pushState) history.pushState(null, '', url);
+          const pageTitle = newView && newView.getAttribute && newView.getAttribute('data-page-title');
+          if (pageTitle) document.title = pageTitle;
+          if (location.hash) {
+            this.scrollToAnchorTarget(decodeURIComponent(location.hash.slice(1)));
+          } else {
+            window.scrollTo(0, 0);
+          }
+          callback && callback(url, newView, newToc);
+        } else {
+          console.warn('Could not find view containers in the fetched HTML. Reloading the page as fallback.');
+          location.href = url;
+        }
+      }).catch(() => location.href = url);
+  },
+
+  initExternalLinksDecorator: function() {
+    // Function to check if a link is external
+    function isExternalLink(anchor) {
+      return anchor.hostname && anchor.hostname !== window.location.hostname;
+    }
+
+    // Example: Add 'external' class to all external links
+    document.querySelectorAll('a[href]').forEach(a => {
+      if (isExternalLink(a)) {
+        a.classList.add('external');
+        a.setAttribute('target', '_blank');
+      }
+    });
+  },
+
+  /**
+   * Initialize the application with the default options.
+   */
+  initAnimatedAlerts: function() {
+    document.querySelectorAll('.alert').forEach(alert => {
+      const anim = document.createElement('div');
+      anim.className = 'alert-animation';
+      anim.style.left = '0px';
+      anim.style.top = '0px';
+      alert.style.position = 'relative';
+      alert.insertAdjacentElement('afterbegin', anim);
+
+      const offsetX = 400;
+      const offsetY = 400;
+
+      document.body.addEventListener('mousemove', e => {
+        const rect = alert.getBoundingClientRect();
+        const animW = anim.offsetWidth;
+        const animH = anim.offsetHeight;
+        let x = e.clientX - rect.left - animW / 2;
+        let y = e.clientY - rect.top - animH / 2;
+
+        // Allow exceeding by offset
+        x = Math.max(-offsetX, Math.min(x, rect.width - animW + offsetX));
+        y = Math.max(-offsetY, Math.min(y, rect.height - animH + offsetY));
+
+        // Calculate rotation based on mouse position (example: angle from center)
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const dx = x + animW / 2 - centerX;
+        const dy = y + animH / 2 - centerY;
+        const angle = Math.atan2(dy, dx) * (18 / Math.PI); // degrees
+        anim.style.transform = 'translate(' + x + 'px, ' + y + 'px) rotate(' + angle + 'deg)';
+      });
+    });
+  },
+  
+  /**
+   * Initialize "time ago" formatting for <time> elements using the
+   * browser's built-in internationalization (`Intl.RelativeTimeFormat`),
+   * so relative dates render in the visitor's own language.
+   *
+   * Example: "2023-10-01 12:00:00" -> "last month" (en) / locale equivalent.
+   */
+  initTimeAgo: function() {
+    const rtf = new Intl.RelativeTimeFormat(navigator.language || 'en', { numeric: 'auto' });
+    function timeago(dateString) {
+      const date = new Date(String(dateString).replace(' ', 'T'));
+      if (isNaN(date.getTime())) return null;
+      const diffSec = Math.round((date.getTime() - Date.now()) / 1000);
+      const abs = Math.abs(diffSec);
+      let value, unit;
+      if (abs < 60) { value = diffSec; unit = 'second'; }
+      else if (abs < 3600) { value = Math.round(diffSec / 60); unit = 'minute'; }
+      else if (abs < 86400) { value = Math.round(diffSec / 3600); unit = 'hour'; }
+      else if (abs < 604800) { value = Math.round(diffSec / 86400); unit = 'day'; }
+      else if (abs < 2592000) { value = Math.round(diffSec / 604800); unit = 'week'; }
+      else if (abs < 31536000) { value = Math.round(diffSec / 2592000); unit = 'month'; }
+      else { value = Math.round(diffSec / 31536000); unit = 'year'; }
+      try {
+        return rtf.format(value, unit);
+      } catch (err) {
+        return null;
+      }
+    }
+    document.querySelectorAll('time[datetime]').forEach(el => {
+      const text = timeago(el.getAttribute('datetime'));
+      if (text !== null) el.textContent = text;
+    });
+  },
+
+  /**
+   * Minimal dropdown toggle for `[data-bs-toggle="dropdown"]` buttons
+   * (version switcher, share menu). Replaces the Bootstrap JS bundle:
+   * toggles `.show` on the sibling `.dropdown-menu` (which Bootstrap's
+   * CSS displays), syncs `aria-expanded`, and closes on outside click
+   * or `Escape`. Clicks inside an open menu are left alone so copy
+   * actions can flash their inline "Copied!" feedback; navigation
+   * swaps the content (and the menu with it) anyway. Delegated on
+   * `document` so SPA swaps keep working without re-binding.
+   */
+  initDropdowns: function() {
+    const closeAll = (except) => {
+      document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(toggle => {
+        if (toggle === except) return;
+        toggle.setAttribute('aria-expanded', 'false');
+        const menu = toggle.parentElement ? toggle.parentElement.querySelector('.dropdown-menu') : null;
+        if (menu) menu.classList.remove('show');
+      });
+    };
+    document.addEventListener('click', (e) => {
+      const toggle = e.target.closest('[data-bs-toggle="dropdown"]');
+      if (!toggle) {
+        if (!e.target.closest('.dropdown-menu')) closeAll();
+        return;
+      }
+      e.preventDefault();
+      const menu = toggle.parentElement ? toggle.parentElement.querySelector('.dropdown-menu') : null;
+      const willOpen = menu && !menu.classList.contains('show');
+      closeAll(toggle);
+      if (menu) {
+        menu.classList.toggle('show', willOpen);
+        toggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeAll();
+    });
+  }
+}
+
+// Templates call `UI.*` from separate `<script>` blocks, so the app
+// object must live on the global scope (the IIFE wrapper alone would
+// keep it module-private).
+window.UI = UI;
+
+document.addEventListener('DOMContentLoaded', () => {
+  UI.init({
+    enableStickySidebar: true,
+    enableAnimatedAlerts: true
+  });
+
+  const toggleAreaBtns = document.querySelectorAll('button[data-toggle-area]');
+  const mainArea = document.querySelector('div[data-area="main"]');
+  const leftSidebar = document.querySelector('div[data-area="left"]');
+  const rightSidebar = document.querySelector('div[data-area="right"]');
+
+  // Load preferences from localStorage
+  let isLeftSidebarVisible = localStorage.getItem('leftSidebarVisible') !== 'false';
+  let isRightSidebarVisible = localStorage.getItem('rightSidebarVisible') !== 'false';
+
+  function updateMainAreaCols() {
+    if (!isLeftSidebarVisible && !isRightSidebarVisible) {
+      mainArea.classList.remove('col-lg-7', 'col-lg-9');
+      mainArea.classList.add('col-lg-12');
+    } else if (!isLeftSidebarVisible || !isRightSidebarVisible) {
+      mainArea.classList.remove('col-lg-7', 'col-lg-12');
+      mainArea.classList.add('col-lg-9');
+    } else {
+      mainArea.classList.remove('col-lg-9', 'col-lg-12');
+      mainArea.classList.add('col-lg-7');
+    }
+  }
+
+  function updateSidebarVisibility() {
+    if (isLeftSidebarVisible) {
+      leftSidebar.classList.remove('d-none');
+      leftSidebar.classList.add('d-lg-block');
+    } else {
+      leftSidebar.classList.remove('d-lg-block');
+      leftSidebar.classList.add('d-none');
+    }
+    if (isRightSidebarVisible) {
+      rightSidebar.classList.remove('d-none');
+      rightSidebar.classList.add('d-lg-block');
+    } else {
+      rightSidebar.classList.remove('d-lg-block');
+      rightSidebar.classList.add('d-none');
+    }
+  }
+
+  toggleAreaBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const areaName = btn.getAttribute('data-toggle-area');
+      const areaElement = document.querySelector(`div[data-area="${areaName}"]`);
+      const icon = btn.querySelectorAll('span');
+      if (areaElement.classList.contains('d-lg-block')) {
+        areaElement.classList.remove('d-lg-block');
+        areaElement.classList.add('d-none');
+        if (areaName === 'left') {
+          isLeftSidebarVisible = false;
+          localStorage.setItem('leftSidebarVisible', 'false');
+        } else if (areaName === 'right') {
+          isRightSidebarVisible = false;
+          localStorage.setItem('rightSidebarVisible', 'false');
+        }
+      } else {
+        areaElement.classList.remove('d-none');
+        areaElement.classList.add('d-lg-block');
+        if (areaName === 'left') {
+          isLeftSidebarVisible = true;
+          localStorage.setItem('leftSidebarVisible', 'true');
+        } else if (areaName === 'right') {
+          isRightSidebarVisible = true;
+          localStorage.setItem('rightSidebarVisible', 'true');
+        }
+      }
+      updateMainAreaCols();
+      // Optionally toggle icons here
+      icon[0].classList.toggle('d-none');
+      icon[1].classList.toggle('d-none');
+    });
+  });
+
+  // Initial setup
+  updateSidebarVisibility();
+  updateMainAreaCols();
+});

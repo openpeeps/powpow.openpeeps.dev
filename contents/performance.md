@@ -13,22 +13,22 @@ them visible in the source and the benchmark numbers below.
 
 - **Zero-copy parsing.** The HTTP parser materializes request fields lazily from
   byte offsets — nothing is copied until you ask for it.
-  ([parser](http/parser.md))
+  ([parser](http/parser))
 - **Zero-copy file transmission.** Files are sent with `sendfile`
   (`TransmitFile` on Windows) — no userspace round-trip. Under the io_uring
   backend they go through `IORING_OP_SPLICE` (file → pipe → socket), which is
-  equally copy-free. ([static files](http/static-files.md))
+  equally copy-free. ([static files](http/static-files))
 - **Zero-copy sends (io_uring).** `IORING_OP_SEND_ZC` pins the buffer once and
   reports a `IORING_CQE_F_NOTIF` before the pages may be reused; registered
   buffers (`-d:powpowSendZcFixed`) remove the per-op pinning entirely.
-  ([io_uring](io_uring.md))
+  ([io_uring](io_uring))
 - **SIMD scanning.** SSE2-accelerated CRLF / CRLFCRLF detection with a scalar
   fallback (`proto/simdscan.nim`). `findDoubleCRLF` locates the header terminator
   in a few instructions per 16 bytes.
 - **Pointer-based fd dispatch.** No hash-table lookups on the hot path;
   generation-counter stale-event detection; dead-watcher sweep.
 - **4-level hierarchical timer wheel.** O(1) timer insert/fire/cancel.
-  ([event loop](core/event-loop.md))
+  ([event loop](core/event-loop))
 - **Object pooling.** Connections, read buffers, parsers, requests, responses,
   per-connection sessions (`ConnHttp`) and WebSockets are pooled and reused;
   `newHttpServer` prewarms the pools by default (`populatePools`, pool size
@@ -40,7 +40,7 @@ them visible in the source and the benchmark numbers below.
   (`TCP_CORK`/`TCP_NOPUSH`), flushed when the connection is writable.
 - **Scatter-gather writes.** `sendv` batches header + body into one `writev`.
 - **`SO_REUSEPORT`** distributes connections across one loop per CPU core with
-  zero cross-thread communication. ([concurrency](concurrency.md))
+  zero cross-thread communication. ([concurrency](concurrency))
 - **Edge-triggered I/O** on kqueue/epoll.
 
 ## io_uring: what to expect
@@ -105,7 +105,7 @@ many independent streams over a single connection:
 - **HTTP/2** multiplexes requests over one TCP connection, so multiple reads and
   writes for independent streams are in flight at once — a much better fit for
   io_uring than HTTP/1.x. powpow ships an experimental implementation
-  (see [HTTP/2](http/http2.md)) that reuses the same `SEND`/`SPLICE` pumps.
+  (see [HTTP/2](http/http2)) that reuses the same `SEND`/`SPLICE` pumps.
 - **HTTP/3 (QUIC)** decouples streams from TCP entirely, running over UDP with
   its own framing — the clearest case where io_uring's completion-driven model
   can meaningfully reduce per-stream overhead.
@@ -272,5 +272,5 @@ connections allocate on demand (server-side pool starvation):
 ## API reference
 
 - [SIMD scanning API reference](https://openpeeps.github.io/powpow/theindex.html)
-- [event loop](core/event-loop.md), [static files](http/static-files.md),
-  [concurrency](concurrency.md)
+- [event loop](core/event-loop), [static files](http/static-files),
+  [concurrency](concurrency)

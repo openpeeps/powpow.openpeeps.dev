@@ -35,6 +35,28 @@ loop.run()
 `newTcpServer` returns a `TcpServer` with public fields `fd`, `loop`, `onClose`,
 `connPool` and `maxConnections`.
 
+## With its own loop
+
+Omit the `loop` and the server creates and owns a private one:
+
+```nim
+let server = newTcpServer(
+  onData  = proc(conn: Connection, data: openArray[byte]) =
+    discard conn.send(data),          # echo
+  onAccept = proc(conn: Connection) =
+    echo "client connected: ", conn.getClientIp())
+
+server.listen("0.0.0.0", 9010)
+server.run()                          # blocks; frees the owned loop on exit
+```
+
+`server.getLoop()` exposes the loop when you need to share it (e.g. dial out
+with `server.getLoop().connect(...)` or add timers). From a callback, call
+`server.stop()` (or `server.close()`); `close()` frees the owned loop once
+`run()` returns, immediately when called from outside `run()`. A borrowed loop
+is never closed by the server. `server.start("0.0.0.0", 9010)` is shorthand
+for `listen` + `run` (plus `startUnix` for UDS, POSIX).
+
 `listenUnix(path, mode = 0o660)` binds a Unix domain socket instead of TCP
 (POSIX). `injectFd(server, clientFd)` lets you hand a pre-accepted fd to the
 server (used by the HTTP server's upgrade path).
@@ -50,9 +72,31 @@ connect(loop, "example.com", 443,
   onError   = proc(err: string) = echo "failed: ", err)
 ```
 
-Hostnames are resolved **on the loop** via the [async DNS resolver](../core/dns.md);
+Hostnames are resolved **on the loop** via the [async DNS resolver](../core/dns);
 DNS failure arrives through `onError`. `connectUnix(path, onConnect, onData,
 onClose)` connects to a Unix socket (POSIX).
+
+## Blocking connect with its own loop
+
+Omit the `loop` for a self-contained client: it creates a private loop, drives
+it until the connection closes (or the connect fails), then frees it. This is
+the simple shape for scripts; concurrent clients sharing one loop should use
+the `loop`-taking overload above instead.
+
+```nim
+connect("example.com", 443,
+  onConnect = proc(conn: Connection) = conn.send("GET / HTTP/1.1\r\n\r\n"),
+  onData    = proc(conn: Connection, data: openArray[byte]) =
+    stdout.write(cast[string](data)),
+  onClose   = proc(conn: Connection) = echo "closed",
+  onError   = proc(err: string) = echo "failed: ", err)
+# returns after the connection closes; the loop is already freed
+```
+
+`connectHe` (Happy Eyeballs) and `connectUnix` (POSIX) have the same blocking
+overloads. A connection from any of these carries `ownsLoop = true`:
+`conn.getLoop()` exposes the loop, `conn.run()` drives it, and `conn.close()`
+stops/frees the owned loop.
 
 ## Sending data
 
@@ -80,7 +124,7 @@ while conn.continueSendFile():         # returns false when done
 
 Under the **io_uring** backend the transfer is driven by `IORING_OP_SPLICE`
 (file → pipe → socket) with no user-space copy; see the
-[io_uring guide](../io_uring.md).
+[io_uring guide](../io_uring).
 
 ## Closing
 
@@ -92,7 +136,8 @@ conn.closeAndRelease()   # close and return buffers to the pool
 ```
 
 Graceful shutdown: `closeAfterDrain` guarantees buffered data is sent before the
-connection tears down.
+connection tears down. `close()` on an owned-loop connection additionally
+stops/frees that loop (see above).
 
 ## Connection details
 
@@ -119,5 +164,5 @@ loop.releaseBuf(buf)
 
 ## API reference
 
-Full signatures: [TCP API](https://openpeeps.github.io/powpow/theindex.html). Related: [sockets](sockets.md),
-[UDP](udp.md), [TLS](tls.md).
+Full signatures: [TCP API](https://openpeeps.github.io/powpow/theindex.html). Related: [sockets](sockets),
+[UDP](udp), [TLS](tls).

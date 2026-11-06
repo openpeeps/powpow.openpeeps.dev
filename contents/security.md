@@ -104,7 +104,7 @@ smuggler -g tests/fuzz/request-line.cfg -t 127.0.0.1:9000 -n 1000
 
 ## Related docs
 
-- [Testing](testing.md) — how the hardening is verified
-- [Static files](http/static-files.md) — path/symlink safety details
-- [Multipart](http/multipart.md) — upload caps
-- [WebSocket](websocket.md) — frame/handshake caps
+- [Testing](testing) — how the hardening is verified
+- [Static files](http/static-files) — path/symlink safety details
+- [Multipart](http/multipart) — upload caps
+- [WebSocket](websocket) — frame/handshake caps
