@@ -13,8 +13,7 @@ and efficient, with a focus on low-latency event handling and minimal overhead,
 providing a solid foundation for high-performance networked applications in Nim.
 
 It is also used as a networking backend by
-[Supranim](https://github.com/supranim/supranim) — switch on `--features:powpow`
-when compiling a Supranim app.
+[Supranim](https://github.com/supranim/supranim).
 
 > [!WARNING]
 > The library is not production-ready yet and may contain bugs and security
